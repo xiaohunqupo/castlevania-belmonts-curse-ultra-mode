@@ -10,7 +10,7 @@ namespace UltraMode.Features;
 /// menu no longer adds or removes them: charms without drawbacks when PassiveCharms is on, the DrawbackCharms list
 /// when PassiveDrawbackCharms is on. Turning an option off unequips its charms again unless they sit in a slot.
 /// Charm effects, drawbacks included, are applied exactly as the game defines them.
-/// ForceRevealSecret makes the game's equipped checks report the Revealing Stone even when it isn't owned; the
+/// ForceRevealSecret makes the game's equipped checks report the Gloomstone even when it isn't owned; the
 /// charm has no affect, the hidden-wall reveal only asks whether it is equipped.
 /// The charms menu and the inventory's own equip calls see the real slots, otherwise every owned charm looks
 /// equipped and can't be put into a slot.

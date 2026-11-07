@@ -4,6 +4,13 @@
     <AssemblyName>UltraMode</AssemblyName>
     <RootNamespace>UltraMode</RootNamespace>
     <Version>0.1.0</Version>
+    <Authors>Danny许</Authors>
+    <Company>Danny许</Company>
+    <Product>Ultra Mode</Product>
+    <Description>Castlevania: Belmont's Curse 奥创模式 / Ultra Mode (BepInEx 6 IL2CPP)</Description>
+    <Copyright>Copyright (c) 2026 Danny许. Licensed under MIT OR MulanPSL-2.0.</Copyright>
+    <PackageLicenseExpression>MIT OR MulanPSL-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/xiaohunqupo/castlevania-belmonts-curse-ultra-mode</RepositoryUrl>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -40,7 +47,7 @@
       <PackageFile>$(MSBuildProjectDirectory)/dist/$(AssemblyName)-v$(Version).zip</PackageFile>
     </PropertyGroup>
     <RemoveDir Directories="$(PackageRoot)" />
-    <Copy SourceFiles="$(TargetPath);README.md" DestinationFolder="$(PackageRoot)BepInEx/plugins/UltraMode" />
+    <Copy SourceFiles="$(TargetPath);README.md;README.zh-CN.md;LICENSE-MIT;LICENSE-MulanPSL2" DestinationFolder="$(PackageRoot)BepInEx/plugins/UltraMode" />
     <Copy SourceFiles="vendor/BelmontUI/LICENSE" DestinationFiles="$(PackageRoot)BepInEx/plugins/UltraMode/BelmontUI-LICENSE.txt" />
     <MakeDir Directories="dist" />
     <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageFile)" Overwrite="true" />
@@ -49,7 +56,7 @@
 
   <Target Name="Deploy" AfterTargets="Build" Condition="'$(SkipDeploy)' != 'true'">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDir)" />
-    <Copy SourceFiles="README.md" DestinationFolder="$(PluginDir)" />
+    <Copy SourceFiles="README.md;README.zh-CN.md;LICENSE-MIT;LICENSE-MulanPSL2" DestinationFolder="$(PluginDir)" />
     <Copy SourceFiles="vendor/BelmontUI/LICENSE" DestinationFiles="$(PluginDir)/BelmontUI-LICENSE.txt" />
     <Message Importance="high" Text="UltraMode deployed to $(PluginDir)" />
   </Target>

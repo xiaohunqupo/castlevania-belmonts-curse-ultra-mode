@@ -49,8 +49,8 @@ internal static class SettingsRows
         Toggle(Settings.RepairMirrors, "修复破碎镜子", "Repair broken mirrors", "隐士任务后损坏的传送镜子恢复可用", "Teleport mirrors broken after The Hermit work again"),
 
         Toggle(Settings.PassiveCharms, "自动装备正面魔导器", "Auto-equip relics without drawbacks", "获得即生效，不占装备槽", "Active once found, no slot needed"),
-        Toggle(Settings.PassiveDrawbackCharms, "自动装备负面魔导器", "Auto-equip relics with drawbacks", "焦黑之心、地狱徽记、别西卜之印、苍白之刺、亡灵指环", "Blackened Heart, Infernal Crest, Beelzebub's Seal, Pale Thorn, Undead Ring"),
-        Toggle(Settings.ForceRevealSecret, "强制开启洞幽石", "Always-on Revealing Stone", "没获得也生效，靠近时显示隐藏墙壁", "Works even if not found; reveals hidden walls nearby"),
+        Toggle(Settings.PassiveDrawbackCharms, "自动装备负面魔导器", "Auto-equip relics with drawbacks", "焦黑之心、地狱徽记、别西卜之印、苍白之刺、亡灵指环", "Blackened Heart, Infernal Medallion, Beelzebub's Seal, Pale Thorn, Phantom Ring"),
+        Toggle(Settings.ForceRevealSecret, "强制开启洞幽石", "Always-on Gloomstone", "没获得也生效，靠近时显示隐藏墙壁", "Works even if not found; reveals hidden walls nearby"),
         Toggle(Settings.DebugLogging, "调试日志", "Debug logging", "把动作等事件写入 LogOutput.log", "Writes action events to LogOutput.log"),
     };
 
