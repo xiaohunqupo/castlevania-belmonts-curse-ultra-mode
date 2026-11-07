@@ -21,6 +21,11 @@
     <GamePath Condition="'$(GamePath)' == '' and '$(BELMONTS_CURSE_DIR)' != ''">$(BELMONTS_CURSE_DIR)</GamePath>
     <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Castlevania Belmont's Curse</GamePath>
     <PluginDir>$(GamePath)\BepInEx\plugins\UltraMode</PluginDir>
+    <!-- Bundled in the all-in-one package. Changing it means rerunning tools/fetch-bepinex-licenses.ps1. -->
+    <BepInExBuild>6.0.0-be.788+5b766a3</BepInExBuild>
+    <BepInExZip>BepInEx-Unity.IL2CPP-win-x64-$(BepInExBuild).zip</BepInExZip>
+    <BepInExUrl>https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip</BepInExUrl>
+    <BepInExSha256>F4CC496BD098A0DF4164B81E3737297707F13A47C2478DBA2F60EEFAB784817A</BepInExSha256>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,6 +57,34 @@
     <MakeDir Directories="dist" />
     <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageFile)" Overwrite="true" />
     <Message Importance="high" Text="UltraMode packaged to $(PackageFile)" />
+  </Target>
+
+  <!--
+    The plugin zip plus the official, unmodified BepInEx build, so players install everything in one step.
+    The download is cached in obj/ and must match BepInExSha256. BepInEx's components are LGPL/MIT/Apache and its
+    zip carries no license files, so third_party/BepInEx (notices and every license) goes in as BepInEx/third-party.
+  -->
+  <Target Name="PackageFull" AfterTargets="Package" Condition="'$(SkipPackage)' != 'true' and '$(SkipFullPackage)' != 'true'">
+    <PropertyGroup>
+      <BepInExCache>$(BaseIntermediateOutputPath)bepinex/</BepInExCache>
+      <BepInExExtracted>$(BepInExCache)$(BepInExBuild)/</BepInExExtracted>
+      <FullPackageRoot>$(BaseIntermediateOutputPath)package-full/</FullPackageRoot>
+      <FullPackageFile>$(MSBuildProjectDirectory)/dist/$(AssemblyName)-v$(Version)-with-BepInEx.zip</FullPackageFile>
+    </PropertyGroup>
+    <DownloadFile Condition="!Exists('$(BepInExCache)$(BepInExZip)')" SourceUrl="$(BepInExUrl)" DestinationFolder="$(BepInExCache)" DestinationFileName="$(BepInExZip)" />
+    <VerifyFileHash File="$(BepInExCache)$(BepInExZip)" Hash="$(BepInExSha256)" Algorithm="SHA256" />
+    <Unzip Condition="!Exists('$(BepInExExtracted)winhttp.dll')" SourceFiles="$(BepInExCache)$(BepInExZip)" DestinationFolder="$(BepInExExtracted)" />
+    <ItemGroup>
+      <BepInExFiles Include="$(BepInExExtracted)**/*" />
+      <PluginPackageFiles Include="$(PackageRoot)**/*" />
+      <BepInExNotices Include="third_party/BepInEx/**/*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(FullPackageRoot)" />
+    <Copy SourceFiles="@(BepInExFiles)" DestinationFiles="@(BepInExFiles->'$(FullPackageRoot)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(PluginPackageFiles)" DestinationFiles="@(PluginPackageFiles->'$(FullPackageRoot)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(BepInExNotices)" DestinationFiles="@(BepInExNotices->'$(FullPackageRoot)BepInEx/third-party/%(RecursiveDir)%(Filename)%(Extension)')" />
+    <ZipDirectory SourceDirectory="$(FullPackageRoot)" DestinationFile="$(FullPackageFile)" Overwrite="true" />
+    <Message Importance="high" Text="UltraMode + BepInEx $(BepInExBuild) packaged to $(FullPackageFile)" />
   </Target>
 
   <Target Name="Deploy" AfterTargets="Build" Condition="'$(SkipDeploy)' != 'true'">

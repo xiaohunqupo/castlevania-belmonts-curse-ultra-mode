@@ -48,7 +48,20 @@ powershell -File tools/release.ps1 0.2.0
 3. 编译：`-warnaserror`，有警告就失败；检查 zip 里有 dll、两份 README、两份许可证和 BelmontUI-LICENSE.txt。
 4. 如果改了版本号，提交 `Release v0.2.0`。
 5. 打附注标签 `v0.2.0`，推送 `main` 和标签。
-6. `gh release create`，上传 `dist/UltraMode-v0.2.0.zip`，发布说明用 `docs/release-notes/v0.2.0.md`。
+6. `gh release create`，上传 `dist/UltraMode-v0.2.0.zip` 和整合包 `dist/UltraMode-v0.2.0-with-BepInEx.zip`，发布说明用 `docs/release-notes/v0.2.0.md`。
+
+第 3 步还会检查整合包：必须有 BepInEx 本体、`BepInEx/third-party/` 下的声明和许可证；不能有 `BepInEx/interop/`、`BepInEx/config/` 这类在玩家机器上生成的文件（interop 来自游戏代码，不能分发）。
+
+## 整合包与 BepInEx 版本
+
+整合包原样包含官方 BepInEx 6 IL2CPP win-x64。BepInEx 和 Doorstop 是 LGPL-2.1，Il2CppInterop 是 LGPL-3.0，其余组件是 MIT / Apache-2.0。原样再分发是允许的，但官方 zip 里没有任何许可证文件，所以必须附上 `third_party/BepInEx/`（`NOTICE.md` 列出每个组件的版本、许可证和对应版本的源码地址，`licenses/` 是全文）。**不要修改 BepInEx 的任何文件再打包**，否则还要提供修改后的源码。
+
+升级捆绑的 BepInEx 版本：
+
+1. 在 `UltraMode.csproj` 里改 `BepInExBuild`、`BepInExUrl`，并把 `BepInExSha256` 改成新 zip 的 SHA-256（`Get-FileHash <zip>`）。
+2. 打开新 zip，查看 `BepInEx/core` 下各 dll 的版本（`(Get-Item x.dll).VersionInfo.ProductVersion`，`+` 后面是提交号），更新 `tools/fetch-bepinex-licenses.ps1` 里的 `$components`。新增或删除了组件时也要在这里增删。
+3. 运行 `powershell -File tools/fetch-bepinex-licenses.ps1`，检查 `third_party/BepInEx/NOTICE.md` 的差异并提交。
+4. 用新 BepInEx 在游戏里完整测试，并同步修改 README 里写的 BepInEx 版本。
 
 其他参数：`-Draft` 只创建草稿，在网页上确认后再发布；`-NotesFile <文件>` 指定其他发布说明文件。
 

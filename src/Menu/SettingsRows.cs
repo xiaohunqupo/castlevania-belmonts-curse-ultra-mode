@@ -24,6 +24,7 @@ internal static class SettingsRows
     internal static SettingsRow[] All() => new SettingsRow[]
     {
         Toggle(Settings.Enabled, "启用奥创模式", "Enable Ultra Mode", "关闭后全部恢复原版（也可按 F10 切换）", "Off restores vanilla behaviour (F10 toggles too)"),
+        Toggle(Settings.ToggleKeyEnabled, "快捷键开关奥创模式", "Toggle hotkey", "默认 F10，与其他 mod 冲突时关闭", "F10 by default; turn off if another mod uses it"),
 
         Slider(Settings.MoveSpeed, 0.5f, 3f, 0.05f, "移动速度", "Move speed", "1.00x 为原版", "1.00x is vanilla"),
         Slider(Settings.GroundSharpness, 1f, 10f, 0.1f, "起步与停止灵敏度", "Start/stop sharpness", "越大越跟手", "Higher feels snappier"),
@@ -53,6 +54,7 @@ internal static class SettingsRows
         Toggle(Settings.PassiveDrawbackCharms, "自动装备负面魔导器", "Auto-equip relics with drawbacks", "焦黑之心、地狱徽记、别西卜之印、苍白之刺、亡灵指环", "Blackened Heart, Infernal Medallion, Beelzebub's Seal, Pale Thorn, Phantom Ring"),
         Toggle(Settings.ForceRevealSecret, "强制开启洞幽石", "Always-on Gloomstone", "没获得也生效，靠近时显示隐藏墙壁", "Works even if not found; reveals hidden walls nearby"),
         Toggle(Settings.DebugLogging, "调试日志", "Debug logging", "把动作等事件写入 LogOutput.log", "Writes action events to LogOutput.log"),
+        Toggle(Settings.DumpKeyEnabled, "快捷键导出调试数据", "Debug dump hotkey", "默认 F11，排查问题时再打开", "F11 by default; only needed when reporting a bug"),
     };
 
     internal static void Save() => Plugin.Instance.Config.Save();

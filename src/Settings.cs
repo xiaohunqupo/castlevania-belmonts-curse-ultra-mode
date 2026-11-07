@@ -11,6 +11,7 @@ namespace UltraMode;
 internal static class Settings
 {
     internal static ConfigEntry<bool> Enabled = null!;
+    internal static ConfigEntry<bool> ToggleKeyEnabled = null!;
     internal static ConfigEntry<KeyboardShortcut> ToggleKey = null!;
 
     internal static ConfigEntry<float> MoveSpeed = null!;
@@ -47,11 +48,13 @@ internal static class Settings
     internal static ConfigEntry<string> DrawbackCharms = null!;
     internal static ConfigEntry<bool> ForceRevealSecret = null!;
     internal static ConfigEntry<bool> DebugLogging = null!;
+    internal static ConfigEntry<bool> DumpKeyEnabled = null!;
     internal static ConfigEntry<KeyboardShortcut> DumpKey = null!;
 
     internal static void Bind(ConfigFile cfg)
     {
         Enabled = cfg.Bind("00 General", "Enabled", true, "总开关：奥创模式。关闭后所有补丁都回到原版行为。");
+        ToggleKeyEnabled = cfg.Bind("00 General", "ToggleKeyEnabled", true, "启用切换奥创模式的快捷键（ToggleKey）。和其他 mod 的快捷键冲突时关闭，或者改 ToggleKey。");
         ToggleKey = cfg.Bind("00 General", "ToggleKey", new KeyboardShortcut(KeyCode.F10), "游戏内切换奥创模式的按键。");
 
         MoveSpeed = cfg.Bind("01 Fast Response", "MoveSpeed", 1.25f,
@@ -107,10 +110,11 @@ internal static class Settings
         ForceRevealSecret = cfg.Bind("05 Charms", "ForceRevealSecret", true,
             "洞幽石（Charm_RevealSecret）的效果始终生效，没获得也一样：靠近时显示可破坏的隐藏墙壁。");
         DebugLogging = cfg.Bind("99 Debug", "DebugLogging", false, "在 BepInEx/LogOutput.log 输出主角每个动作的开始/结束、弹反等事件。");
+        DumpKeyEnabled = cfg.Bind("99 Debug", "DumpKeyEnabled", false, "启用导出调试数据的快捷键（DumpKey）。只在排查问题时需要，默认关闭以免和其他 mod 冲突。");
         DumpKey = cfg.Bind("99 Debug", "DumpKey", new KeyboardShortcut(KeyCode.F11), "把主角动作、魔导器、能力等运行时数据导出到 BepInEx/ultra_mode_dump/。");
     }
 
-    /// <summary>The master switch (F10). Features check it on every use, so turning it off restores vanilla at once.</summary>
+    /// <summary>The master switch (ToggleKey). Features check it on every use, so turning it off restores vanilla at once.</summary>
     internal static bool On => Enabled.Value;
 
     private static readonly List<(ConfigEntryBase entry, Action action)> listeners = new();

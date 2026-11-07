@@ -10,7 +10,7 @@
 
 - `BepInEx/LogOutput.log`（完整文件）；
 - 游戏版本、BepInEx 版本、本 mod 版本，以及同时安装的其他 mod；
-- 复现步骤。如果是动作或魔导器相关的问题，打开 `DebugLogging` 复现一次，再按 F11 附上 `BepInEx/ultra_mode_dump/` 里的文件。
+- 复现步骤。如果是动作或魔导器相关的问题，打开 `DebugLogging` 和"快捷键导出调试数据"（`DumpKeyEnabled`）复现一次，再按 F11 附上 `BepInEx/ultra_mode_dump/` 里的文件。
 
 ## 提交代码
 
@@ -32,7 +32,7 @@
 
 Issues and pull requests are welcome.
 
-**Reporting a problem:** attach the full `BepInEx/LogOutput.log`; the game, BepInEx and mod versions and any other mods installed; and steps to reproduce. For action or relic issues, reproduce once with `DebugLogging` on, then press F11 and attach the files in `BepInEx/ultra_mode_dump/`.
+**Reporting a problem:** attach the full `BepInEx/LogOutput.log`; the game, BepInEx and mod versions and any other mods installed; and steps to reproduce. For action or relic issues, reproduce once with `DebugLogging` and the debug dump hotkey (`DumpKeyEnabled`) on, then press F11 and attach the files in `BepInEx/ultra_mode_dump/`.
 
 **Contributing code:**
 

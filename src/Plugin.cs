@@ -1,7 +1,9 @@
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using BepInEx.Unity.IL2CPP.Configuration;
 using UnityEngine;
 
 namespace UltraMode;
@@ -57,8 +59,11 @@ public sealed class Plugin : BasePlugin
         Menu.SettingsPage.Register(this);
 
         var enabled = Feature.All.Where(f => f.Enabled).Select(f => f.Name).ToList();
-        Log.LogInfo($"{Name} {Version} loaded; {enabled.Count}/{Feature.All.Count()} features active: {string.Join(", ", enabled)}. Toggle: {Settings.ToggleKey.Value}.");
+        Log.LogInfo($"{Name} {Version} loaded; {enabled.Count}/{Feature.All.Count()} features active: {string.Join(", ", enabled)}. Toggle: {Hotkey(Settings.ToggleKeyEnabled, Settings.ToggleKey)}, dump: {Hotkey(Settings.DumpKeyEnabled, Settings.DumpKey)}.");
     }
+
+    private static string Hotkey(ConfigEntry<bool> enabled, ConfigEntry<KeyboardShortcut> key) =>
+        enabled.Value ? key.Value.ToString() : "off";
 
     public override bool Unload()
     {
@@ -76,8 +81,8 @@ internal sealed class UltraModeBehaviour : MonoBehaviour
     {
         try
         {
-            if (Settings.DumpKey.Value.IsDown()) Inspector.DumpAll();
-            if (!Settings.ToggleKey.Value.IsDown()) return;
+            if (Settings.DumpKeyEnabled.Value && Settings.DumpKey.Value.IsDown()) Inspector.DumpAll();
+            if (!Settings.ToggleKeyEnabled.Value || !Settings.ToggleKey.Value.IsDown()) return;
             Settings.Enabled.Value = !Settings.Enabled.Value;
             Plugin.Logger.LogMessage($"Ultra Mode {(Settings.Enabled.Value ? "ON" : "OFF")}");
         }

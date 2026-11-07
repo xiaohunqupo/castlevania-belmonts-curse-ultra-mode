@@ -21,6 +21,7 @@ $tag = "v$Version"
 $csproj = Join-Path $root "UltraMode.csproj"
 $pluginCs = Join-Path $root "src/Plugin.cs"
 $zip = Join-Path $root "dist/UltraMode-$tag.zip"
+$fullZip = Join-Path $root "dist/UltraMode-$tag-with-BepInEx.zip"
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
 function Step($text) { Write-Host "==> $text" -ForegroundColor Cyan }
@@ -58,15 +59,22 @@ if ($csprojVersion -ne $Version -or $pluginVersion -ne $Version) {
 
 Step "Building"
 Run dotnet build -c Release -p:SkipDeploy=true -nologo -v:minimal -warnaserror
-if (-not (Test-Path $zip)) { Fail "$zip was not produced" }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$archive = [IO.Compression.ZipFile]::OpenRead($zip)
-try { $entries = $archive.Entries | ForEach-Object FullName } finally { $archive.Dispose() }
-$prefix = "BepInEx/plugins/UltraMode/"
-foreach ($required in "UltraMode.dll", "README.md", "README.zh-CN.md", "LICENSE-MIT", "LICENSE-MulanPSL2", "BelmontUI-LICENSE.txt") {
-    if ($entries -notcontains "$prefix$required") { Fail "$required is missing from the zip" }
+function Entries($file) {
+    if (-not (Test-Path $file)) { Fail "$file was not produced" }
+    $archive = [IO.Compression.ZipFile]::OpenRead($file)
+    try { return $archive.Entries | ForEach-Object FullName } finally { $archive.Dispose() }
 }
+$plugin = "UltraMode.dll", "README.md", "README.zh-CN.md", "LICENSE-MIT", "LICENSE-MulanPSL2", "BelmontUI-LICENSE.txt" |
+    ForEach-Object { "BepInEx/plugins/UltraMode/$_" }
+$entries = Entries $zip
+foreach ($required in $plugin) { if ($entries -notcontains $required) { Fail "$required is missing from $zip" } }
 $entries | ForEach-Object { Write-Host "    $_" }
+$fullEntries = Entries $fullZip
+$bundled = "winhttp.dll", "doorstop_config.ini", "BepInEx/core/BepInEx.Unity.IL2CPP.dll", "BepInEx/third-party/NOTICE.md", "BepInEx/third-party/licenses/BepInEx.txt"
+foreach ($required in $plugin + $bundled) { if ($fullEntries -notcontains $required) { Fail "$required is missing from $fullZip" } }
+if ($fullEntries | Where-Object { $_ -like "BepInEx/interop/*" -or $_ -like "BepInEx/config/*" }) { Fail "$fullZip contains generated BepInEx files" }
+Write-Host "    $(Split-Path $fullZip -Leaf): $($fullEntries.Count) files"
 
 if ($DryRun) {
     if ($bumped) { Run git checkout -- $csproj $pluginCs }
@@ -89,7 +97,7 @@ if (-not $NotesFile) {
     $default = Join-Path $root "docs/release-notes/$tag.md"
     if (Test-Path $default) { $NotesFile = $default }
 }
-$ghArgs = @("release", "create", $tag, $zip, "-R", $repo, "--title", "Ultra Mode $tag", "--verify-tag")
+$ghArgs = @("release", "create", $tag, $zip, $fullZip, "-R", $repo, "--title", "Ultra Mode $tag", "--verify-tag")
 if ($NotesFile) { $ghArgs += @("--notes-file", $NotesFile) } else { $ghArgs += "--generate-notes" }
 if ($Draft) { $ghArgs += "--draft" }
 Run gh @ghArgs

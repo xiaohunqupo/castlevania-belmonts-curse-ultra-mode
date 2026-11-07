@@ -29,17 +29,33 @@ Each module is installed on its own. If one fails to install or throws at run ti
 
 ## Install
 
-Requires the Steam version of the game on Windows x64.
+Requires the Steam version of the game on Windows x64. [Releases](https://github.com/xiaohunqupo/castlevania-belmonts-curse-ultra-mode/releases) has two packages; pick one:
 
-1. Install [BepInEx 6 IL2CPP x64 (be.788)](https://builds.bepinex.dev/projects/bepinex_be) (`BepInEx-Unity.IL2CPP-win-x64`), or the game-specific package [BepinEx for Castlevania](https://www.nexusmods.com/castlevaniabelmontscurse/mods/3). Start the game once and quit; the first start takes a few minutes while BepInEx generates its interop assemblies.
-2. Download `UltraMode-v<version>.zip` from [Releases](https://github.com/xiaohunqupo/castlevania-belmonts-curse-ultra-mode/releases) and extract it into the game folder, next to `Castlevania Belmont's Curse.exe`. You should get `BepInEx/plugins/UltraMode/UltraMode.dll`.
-3. Start the game. `BepInEx/LogOutput.log` shows `Ultra Mode ... loaded` when it works.
+| File | For |
+| --- | --- |
+| `UltraMode-v<version>-with-BepInEx.zip` | No BepInEx yet: all-in-one, includes the official, unmodified BepInEx 6 IL2CPP x64 be.788 |
+| `UltraMode-v<version>.zip` | BepInEx 6 IL2CPP (be.788) or other mods already installed: this mod only |
 
-No other mod is required.
+### All-in-one (easiest)
+
+1. Extract `UltraMode-v<version>-with-BepInEx.zip` into the game folder, next to `Castlevania Belmont's Curse.exe`. You get `BepInEx/`, `dotnet/`, `winhttp.dll`, `doorstop_config.ini` and a few other files there.
+2. Start the game. **The first start takes a few minutes** while BepInEx downloads Unity's base libraries and generates its interop assemblies; stay online and don't close the game. Later starts are normal.
+3. `BepInEx/LogOutput.log` shows `Ultra Mode ... loaded` when it works.
+
+### Mod only
+
+1. Install [BepInEx 6 IL2CPP x64 (be.788)](https://builds.bepinex.dev/projects/bepinex_be) (`BepInEx-Unity.IL2CPP-win-x64`), or the game-specific package [BepinEx for Castlevania](https://www.nexusmods.com/castlevaniabelmontscurse/mods/3), and start the game once.
+2. Extract `UltraMode-v<version>.zip` into the game folder. You should get `BepInEx/plugins/UltraMode/UltraMode.dll`.
+3. Start the game and check the log for `Ultra Mode ... loaded`.
+
+No other mod is required either way.
 
 ### Uninstall
 
-Close the game and delete `BepInEx/plugins/UltraMode/`. You can also delete `BepInEx/config/ultra_mode.belmontscurse.cfg`. The mod changes no game files and passive relic effects are not written to your save, so your save is the same as vanilla afterwards.
+- This mod only: close the game and delete `BepInEx/plugins/UltraMode/`. You can also delete `BepInEx/config/ultra_mode.belmontscurse.cfg`.
+- BepInEx too (if you used the all-in-one package): delete `BepInEx/`, `dotnet/`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` and `changelog.txt` from the game folder. Any other mods go with it.
+
+The mod changes no game files and passive relic effects are not written to your save, so your save is the same as vanilla afterwards.
 
 ## Settings
 
@@ -55,10 +71,12 @@ Texts are in Simplified Chinese when the game is, English otherwise.
 
 ### Hotkeys
 
-| Key | Action |
-| --- | --- |
-| F10 | Turn Ultra Mode on or off (`ToggleKey`) |
-| F11 | Dump runtime data (actions, relics, feedbacks...) to `BepInEx/ultra_mode_dump/` for debugging (`DumpKey`) |
+| Key | Action | Default |
+| --- | --- | --- |
+| F10 | Turn Ultra Mode on or off (`ToggleKey`) | On |
+| F11 | Dump runtime data (actions, relics, feedbacks...) to `BepInEx/ultra_mode_dump/` for debugging (`DumpKey`) | Off |
+
+If a hotkey clashes with another mod, turn it off on the settings page ("Toggle hotkey", "Debug dump hotkey") or with `ToggleKeyEnabled` / `DumpKeyEnabled` in the config file. To use a different key, change `ToggleKey` / `DumpKey`, e.g. `F9`, or `F10 + LeftControl` for Ctrl+F10 (the main key comes first).
 
 ### Config file
 
@@ -66,14 +84,14 @@ Texts are in Simplified Chinese when the game is, English otherwise.
 
 | Section | Contents |
 | --- | --- |
-| `00 General` | Master switch, toggle key |
+| `00 General` | Master switch, toggle hotkey and whether it is enabled |
 | `01 Fast Response` | Move speed, start/stop sharpness, turn/brake speed, attack wind-up and recovery, whip speed, mirror travel speed, instant mirror entry and prompt, camera follow and right-stick look |
 | `02 Evasion` | Invulnerable evasion and how dodges are detected, knockback recovery and its effect |
 | `03 Parry` | Attack parry and the parry action it reuses |
 | `04 World` | Repair broken mirrors |
 | `05 Charms` | Auto-equip relics without / with drawbacks, the drawback relic list, always-on Gloomstone |
 | `06 Whip` | No empty whip, auto-aim, highlight reachable anchors only |
-| `99 Debug` | Debug logging, dump key |
+| `99 Debug` | Debug logging, dump hotkey (off by default) |
 
 ### Relics
 
@@ -100,13 +118,13 @@ Texts are in Simplified Chinese when the game is, English otherwise.
 ## Troubleshooting
 
 - A feature or the settings page is missing: look for lines starting with `Ultra Mode` or `[ui]` in `BepInEx/LogOutput.log`.
-- When reporting a problem, attach `LogOutput.log`, the game version and the mod version. If asked, turn on `DebugLogging` and attach the F11 dump.
+- When reporting a problem, attach `LogOutput.log`, the game version and the mod version. If asked, turn on `DebugLogging` and the debug dump hotkey, then attach the F11 dump.
 
 ## Build
 
 Requires the .NET 6 SDK or newer, and the game with BepInEx installed and started once (the build references the interop assemblies it generates).
 
-Every build packs `dist/UltraMode-v<version>.zip` (laid out as `BepInEx/plugins/UltraMode/`) and copies the plugin into the game folder.
+Every build packs `dist/UltraMode-v<version>.zip` (laid out as `BepInEx/plugins/UltraMode/`) and the all-in-one `dist/UltraMode-v<version>-with-BepInEx.zip`, then copies the plugin into the game folder. The all-in-one package downloads the official BepInEx build once into `obj/bepinex/` and checks its SHA-256; skip it with `-p:SkipFullPackage=true`.
 
 ```powershell
 dotnet build -c Release                     # build, pack and copy to the game (close the game first)
@@ -151,6 +169,8 @@ vendor/BelmontUI/            Belmont UI upstream source (MIT), generated by scri
 tools/TypeDump/              Dumps types and members from the interop assemblies
 tools/sync-belmontui.ps1     Syncs the Belmont UI upstream source into vendor/BelmontUI
 tools/release.ps1            One-step release: version bump, build, tag, GitHub release
+tools/fetch-bepinex-licenses.ps1  Fetches the licenses of the bundled BepInEx into third_party/BepInEx
+third_party/BepInEx/         Notices and licenses shipped in the all-in-one package
 docs/                        Maintainer docs
 ```
 
@@ -184,7 +204,7 @@ Mulan PSL v2 is a permissive open-source license from China, written in Chinese 
 
 SPDX: `MIT OR MulanPSL-2.0`. Unless you state otherwise, contributions are licensed under the same terms.
 
-The embedded Belmont UI keeps its own [MIT license](vendor/BelmontUI/LICENSE).
+The embedded Belmont UI keeps its own [MIT license](vendor/BelmontUI/LICENSE). The all-in-one package also contains the official, unmodified BepInEx and its components under their own licenses (LGPL-2.1, LGPL-3.0, MIT, Apache-2.0); see [third_party/BepInEx/NOTICE.md](third_party/BepInEx/NOTICE.md), shipped as `BepInEx/third-party/`.
 
 This is an unofficial fan project, not affiliated with Konami or the game's developers. Castlevania and related names and assets belong to their respective owners.
 

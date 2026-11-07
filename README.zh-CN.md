@@ -29,17 +29,33 @@
 
 ## 安装
 
-需要 Windows x64 的 Steam 版游戏。
+需要 Windows x64 的 Steam 版游戏。[Releases](https://github.com/xiaohunqupo/castlevania-belmonts-curse-ultra-mode/releases) 里有两个包，选一个：
 
-1. 安装 [BepInEx 6 IL2CPP x64（be.788）](https://builds.bepinex.dev/projects/bepinex_be)（选 `BepInEx-Unity.IL2CPP-win-x64`），或者游戏专用整合包 [BepinEx for Castlevania](https://www.nexusmods.com/castlevaniabelmontscurse/mods/3)。然后运行一次游戏再退出，第一次启动需要几分钟生成 interop 程序集。
-2. 从 [Releases](https://github.com/xiaohunqupo/castlevania-belmonts-curse-ultra-mode/releases) 下载 `UltraMode-v<版本>.zip`，解压到游戏根目录（与 `Castlevania Belmont's Curse.exe` 同级），得到 `BepInEx/plugins/UltraMode/UltraMode.dll`。
-3. 启动游戏。日志 `BepInEx/LogOutput.log` 里出现 `Ultra Mode ... loaded` 就说明装好了。
+| 文件 | 适合 |
+| --- | --- |
+| `UltraMode-v<版本>-with-BepInEx.zip` | 还没装 BepInEx：整合包，内含官方原版 BepInEx 6 IL2CPP x64 be.788，一次装好 |
+| `UltraMode-v<版本>.zip` | 已经装了 BepInEx 6 IL2CPP（be.788）或其他 mod：只有本 mod |
 
-不需要安装其他 mod。
+### 整合包（推荐新手）
+
+1. 把 `UltraMode-v<版本>-with-BepInEx.zip` 解压到游戏根目录（与 `Castlevania Belmont's Curse.exe` 同级）。根目录会多出 `BepInEx/`、`dotnet/`、`winhttp.dll`、`doorstop_config.ini` 等。
+2. 启动游戏。**第一次启动需要几分钟**，BepInEx 要下载 Unity 基础库并生成 interop 程序集，期间请保持联网，不要关闭游戏。之后启动就正常了。
+3. 日志 `BepInEx/LogOutput.log` 里出现 `Ultra Mode ... loaded` 就说明装好了。
+
+### 只装本 mod
+
+1. 先装好 [BepInEx 6 IL2CPP x64（be.788）](https://builds.bepinex.dev/projects/bepinex_be)（选 `BepInEx-Unity.IL2CPP-win-x64`），或者游戏专用整合包 [BepinEx for Castlevania](https://www.nexusmods.com/castlevaniabelmontscurse/mods/3)，并运行过一次游戏。
+2. 把 `UltraMode-v<版本>.zip` 解压到游戏根目录，得到 `BepInEx/plugins/UltraMode/UltraMode.dll`。
+3. 启动游戏，同样以日志里的 `Ultra Mode ... loaded` 为准。
+
+两种方式都不需要安装其他 mod。
 
 ### 卸载
 
-关闭游戏，删除 `BepInEx/plugins/UltraMode/`。配置文件 `BepInEx/config/ultra_mode.belmontscurse.cfg` 也可以一并删除。本 mod 不修改游戏文件，被动魔导器的效果也不写入存档，卸载后存档和原版一致。
+- 只卸载本 mod：关闭游戏，删除 `BepInEx/plugins/UltraMode/`。配置文件 `BepInEx/config/ultra_mode.belmontscurse.cfg` 也可以一并删除。
+- 连 BepInEx 一起卸载（用整合包装的）：删除游戏根目录下的 `BepInEx/`、`dotnet/`、`winhttp.dll`、`doorstop_config.ini`、`.doorstop_version`、`changelog.txt`。如果还装了其他 mod，它们也会一起被删除。
+
+本 mod 不修改游戏文件，被动魔导器的效果也不写入存档，卸载后存档和原版一致。
 
 ## 设置
 
@@ -53,10 +69,12 @@
 
 ### 快捷键
 
-| 按键 | 作用 |
-| --- | --- |
-| F10 | 开关整个奥创模式（`ToggleKey`） |
-| F11 | 把动作、魔导器、特效等运行时数据导出到 `BepInEx/ultra_mode_dump/`，用来调试（`DumpKey`） |
+| 按键 | 作用 | 默认 |
+| --- | --- | --- |
+| F10 | 开关整个奥创模式（`ToggleKey`） | 开启 |
+| F11 | 把动作、魔导器、特效等运行时数据导出到 `BepInEx/ultra_mode_dump/`，用来调试（`DumpKey`） | 关闭 |
+
+和其他 mod 的快捷键冲突时，可以在设置页关掉对应的快捷键（"快捷键开关奥创模式"、"快捷键导出调试数据"），或者在配置文件里改 `ToggleKeyEnabled` / `DumpKeyEnabled`。想换成别的按键，就改 `ToggleKey` / `DumpKey`，例如 `F9`；组合键 Ctrl+F10 写成 `F10 + LeftControl`（主键写在最前面）。
 
 ### 配置文件
 
@@ -64,14 +82,14 @@
 
 | 分组 | 内容 |
 | --- | --- |
-| `00 General` | 总开关、切换按键 |
+| `00 General` | 总开关、切换快捷键及其开关 |
 | `01 Fast Response` | 移动速度、起步与停止灵敏度、转身急停速度、攻击前摇与后摇、钩锁速度、镜子传送速度、镜子即按即进与提示、镜头跟随与右摇杆观察 |
 | `02 Evasion` | 闪避无敌及其判定方式、受身及其特效 |
 | `03 Parry` | 攻击弹反、复用的弹反动作 |
 | `04 World` | 修复破碎镜子 |
 | `05 Charms` | 自动装备正面 / 负面魔导器、负面魔导器名单、洞幽石常开 |
 | `06 Whip` | 无目标时不出钩锁、自动瞄准、只高亮钩得到的目标 |
-| `99 Debug` | 调试日志、导出按键 |
+| `99 Debug` | 调试日志、导出快捷键（默认关闭） |
 
 ### 魔导器说明
 
@@ -98,13 +116,13 @@
 ## 问题排查
 
 - 设置页或某个功能没有出现：查看 `BepInEx/LogOutput.log` 中 `Ultra Mode` 和 `[ui]` 开头的行。
-- 提交问题时请附上 `LogOutput.log`、游戏版本和本 mod 的版本；需要的话打开 `DebugLogging`，并按 F11 附上导出的数据。
+- 提交问题时请附上 `LogOutput.log`、游戏版本和本 mod 的版本；需要的话打开 `DebugLogging` 和"快捷键导出调试数据"，并按 F11 附上导出的数据。
 
 ## 构建
 
 需要 .NET 6 或更高版本的 SDK，以及装好 BepInEx 并运行过一次的游戏（编译时引用它生成的 interop 程序集）。
 
-每次编译都会打包到 `dist/UltraMode-v<版本>.zip`（内部结构为 `BepInEx/plugins/UltraMode/`），然后复制到游戏目录。
+每次编译都会打包出 `dist/UltraMode-v<版本>.zip`（内部结构为 `BepInEx/plugins/UltraMode/`）和整合包 `dist/UltraMode-v<版本>-with-BepInEx.zip`，然后复制到游戏目录。整合包第一次构建时会下载官方 BepInEx 到 `obj/bepinex/` 并校验 SHA-256；用 `-p:SkipFullPackage=true` 可以跳过。
 
 ```powershell
 dotnet build -c Release                     # 编译、打包并复制到游戏目录（复制需要先关闭游戏）
@@ -149,6 +167,8 @@ vendor/BelmontUI/            Belmont UI 上游源码（MIT），由脚本生成�
 tools/TypeDump/              从 interop 程序集导出类型和成员
 tools/sync-belmontui.ps1     同步 Belmont UI 上游源码到 vendor/BelmontUI
 tools/release.ps1            一键发布：改版本号、编译打包、打标签、发布 GitHub Release
+tools/fetch-bepinex-licenses.ps1  下载整合包里 BepInEx 各组件的许可证到 third_party/BepInEx
+third_party/BepInEx/         整合包附带的第三方声明和许可证
 docs/                        维护文档
 ```
 
@@ -182,7 +202,7 @@ Copyright (c) 2026 Danny许（[@xiaohunqupo](https://github.com/xiaohunqupo)）
 
 SPDX 标识：`MIT OR MulanPSL-2.0`。除非另有声明，提交到本项目的贡献也按同样的条款授权。
 
-内嵌的 Belmont UI 保留其自身的 [MIT 许可证](vendor/BelmontUI/LICENSE)。
+内嵌的 Belmont UI 保留其自身的 [MIT 许可证](vendor/BelmontUI/LICENSE)。整合包还原样包含官方 BepInEx 及其组件，它们各自遵循自己的许可证（LGPL-2.1、LGPL-3.0、MIT、Apache-2.0），详见 [third_party/BepInEx/NOTICE.md](third_party/BepInEx/NOTICE.md)，随包放在 `BepInEx/third-party/`。
 
 本项目是非官方的社区作品，与 Konami 及游戏开发商无关。《恶魔城》及相关名称、素材归其各自的权利人所有。
 
