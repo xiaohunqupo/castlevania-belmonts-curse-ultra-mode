@@ -6,6 +6,10 @@ using UnityEngine;
 
 namespace UltraMode;
 
+/// <summary>
+/// Entry point. Every class tagged with <see cref="FeatureAttribute"/> is patched and its static <c>Init()</c> is
+/// called; if either throws, only that feature is rolled back. <see cref="Version"/> must match the csproj.
+/// </summary>
 [BepInPlugin(Id, Name, Version)]
 [BepInDependency(Menu.SettingsPage.MinimapGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(Menu.SettingsPage.BelmontUiGuid, BepInDependency.DependencyFlags.SoftDependency)]
@@ -63,6 +67,7 @@ public sealed class Plugin : BasePlugin
     }
 }
 
+/// <summary>Polls the hotkeys. An exception disables this component (the hotkeys stop working) instead of logging every frame.</summary>
 internal sealed class UltraModeBehaviour : MonoBehaviour
 {
     public UltraModeBehaviour(IntPtr ptr) : base(ptr) { }

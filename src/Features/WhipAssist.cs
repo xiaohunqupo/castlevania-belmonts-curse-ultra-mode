@@ -28,6 +28,7 @@ internal static class WhipAssist
         internal readonly Transform Point;
         /// <summary>The distance system wants it lit (between its AddFeedback and RemoveFeedback calls).</summary>
         internal bool Wanted;
+        /// <summary>We are holding its highlight back because it is out of reach.</summary>
         internal bool Hidden;
         internal Anchor(WhipDistanceComponent distance, Entity entity, Transform point) { Distance = distance; Entity = entity; Point = point; Wanted = distance.activated; }
     }
@@ -38,9 +39,13 @@ internal static class WhipAssist
     private static IntPtr detectFor;
     private static WhipHookDetect? probeDetect;
 
+    /// <summary>What GetAimDirection returns while <see cref="Probe"/> runs the game's search.</summary>
     private static Vector3? aimOverride;
+    /// <summary>The anchor auto-aim picked for the whip that is starting.</summary>
     private static Anchor? forced;
-    private static bool whipRunning, selfCall;
+    private static bool whipRunning;
+    /// <summary>We are calling Add/RemoveFeedback ourselves, so our prefixes on them let the call through.</summary>
+    private static bool selfCall;
     private static string lastDecision = "";
     private static readonly HashSet<IntPtr> mismatchReported = new();
 

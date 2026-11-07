@@ -25,6 +25,7 @@ internal static class TechRecovery
     private const int HaltFrames = 2;
     private static int haltUntil = -1;
     private static IntPtr knockbackData;
+    /// <summary>Elapsed frames are counted here: the airborne knockback's own integerFrame stays at 0.</summary>
     private static int knockbackSince;
 
     /// <summary>

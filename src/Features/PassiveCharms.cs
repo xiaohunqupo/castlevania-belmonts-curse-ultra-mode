@@ -23,8 +23,11 @@ internal static class PassiveCharms
     /// <summary>Charms equipped as passives.</summary>
     private static readonly HashSet<(IntPtr inventory, IntPtr charm)> applied = new();
     private static int nextSync;
+    /// <summary>Re-entrancy guard for the HasCharmEquipped postfix.</summary>
     private static bool inHasCharm;
+    /// <summary>Above 0 while the inventory's own equip/unequip code runs; it must see the real slots.</summary>
     private static int slotQueries;
+    /// <summary>The last charms menu opened; while it is open, equipped checks report the real slots too.</summary>
     private static InventoryCharmsMenuManager? charmsMenu;
     private static string drawbackSource = "";
     private static string[] drawbackCharms = Array.Empty<string>();
@@ -57,6 +60,7 @@ internal static class PassiveCharms
         return false;
     }
 
+    /// <summary>Once a second: owned charms that should be passive are equipped, and ones that no longer should are unequipped.</summary>
     private static void Sync(Entity e, Actor actor)
     {
         if (!Fix.Enabled || !Settings.On || Time.frameCount < nextSync) return;

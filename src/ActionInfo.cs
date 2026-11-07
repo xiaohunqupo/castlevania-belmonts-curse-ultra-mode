@@ -3,6 +3,10 @@ using MotherBase.ActionFramework;
 
 namespace UltraMode;
 
+/// <summary>
+/// Queries on action assets that run every frame. Results are cached by native pointer and never evicted: the set
+/// of action assets is small, and walking a feature list with TryCast crosses into IL2CPP for every element.
+/// </summary>
 internal static class ActionInfo
 {
     private static readonly Dictionary<(IntPtr, Type), Il2CppObjectBase?> featureCache = new();
@@ -23,6 +27,7 @@ internal static class ActionInfo
 
     private static readonly Dictionary<IntPtr, bool> attackCache = new();
 
+    /// <summary>Weapon actions are the player's attacks; they carry the first-hit frame the frame scaler splits on.</summary>
     internal static bool IsAttack(ActionData data)
     {
         if (!attackCache.TryGetValue(data.Pointer, out var result))

@@ -173,6 +173,10 @@ internal static class Inspector
             sb.AppendLine($"{item.name}  id={item.itemID}");
     }
 
+    /// <summary>
+    /// Interop hands out wrappers of the declared type (e.g. ActionFeature for every feature in a list). This
+    /// re-wraps the pointer as the object's real IL2CPP type, so reflection sees the subtype's properties.
+    /// </summary>
     internal static object Resolve(object obj)
     {
         if (obj is not Il2CppSystem.Object il2) return obj;

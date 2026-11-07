@@ -17,8 +17,10 @@ internal static class ActionTracker
     private static Dictionary<int, ActionData> active = new();
     private static Dictionary<int, ActionData> scratch = new();
 
+    /// <summary>Every action the player started this session, by name, for the F11 dump.</summary>
     internal static readonly Dictionary<string, int> Seen = new();
     internal static readonly Dictionary<string, ActionData> SeenData = new();
+    /// <summary>The player's running actions as of the last state update, keyed by ActionInstance.id.</summary>
     internal static IReadOnlyDictionary<int, ActionData> Active => active;
 
     internal static event Action<Entity, ActionData>? Started;

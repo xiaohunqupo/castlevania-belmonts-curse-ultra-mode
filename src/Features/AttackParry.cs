@@ -16,6 +16,7 @@ namespace UltraMode.Features;
 internal static class AttackParry
 {
     private static readonly Feature Fix = Feature.Get("AttackParry");
+    /// <summary>Key our hit strategy is added and removed under; must not collide with the ids of the game's own features.</summary>
     private const int StrategyFeatureId = 0x55_17_4A;
 
     private static ActionData? parryAction;
@@ -35,6 +36,7 @@ internal static class AttackParry
         ActionTracker.Updated += OnUpdated;
     }
 
+    /// <summary>Every loaded action with a ParryFeature, enemies' included; also written to the F11 dump.</summary>
     internal static IEnumerable<ActionData> Candidates()
     {
         foreach (var o in Resources.FindObjectsOfTypeAll(Il2CppType.Of<ActionData>()))
@@ -82,6 +84,7 @@ internal static class AttackParry
         else Log.Debug($"AttackParry: '{Settings.ParryActionName.Value}' not loaded yet");
     }
 
+    /// <summary>The parry action can't start until the parry is unlocked; polled every 30 frames until it can.</summary>
     private static bool CheckUnlocked(Entity e)
     {
         if (unlocked || parryAction == null || Time.frameCount < nextUnlockCheck) return unlocked;

@@ -40,6 +40,7 @@ internal static class SettingsPage
         }
     }
 
+    /// <summary>The copy compiled in from vendor/BelmontUI; it is started here because it is not a plugin of its own.</summary>
     private static class Embedded
     {
         internal static void Register(BasePlugin host)

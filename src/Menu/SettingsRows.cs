@@ -20,6 +20,7 @@ internal static class SettingsRows
     internal const string SummaryEn = "Fast response, invulnerable evasion, attack parry, passive relics";
     internal const string SliderFormat = "{0:0.00}x";
 
+    /// <summary>In page order. A config entry left out of this list can only be changed in the cfg file.</summary>
     internal static SettingsRow[] All() => new SettingsRow[]
     {
         Toggle(Settings.Enabled, "启用奥创模式", "Enable Ultra Mode", "关闭后全部恢复原版（也可按 F10 切换）", "Off restores vanilla behaviour (F10 toggles too)"),
@@ -56,6 +57,7 @@ internal static class SettingsRows
 
     internal static void Save() => Plugin.Instance.Config.Save();
 
+    /// <summary>Every entry of this mod's config, including ones not on the page (hotkeys, keyword lists).</summary>
     internal static void ResetAll()
     {
         foreach (var entry in Plugin.Instance.Config.Values) entry.BoxedValue = entry.DefaultValue;

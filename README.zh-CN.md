@@ -117,6 +117,8 @@ dotnet build -c Release -p:GamePath="D:\Games\Castlevania Belmont's Curse"
 
 ## 代码结构
 
+参与开发前请先读 [维护文档](docs/README.md)（架构、各模块的实现细节、调试方法、新增功能步骤、测试清单、发布流程）和 [贡献指南](CONTRIBUTING.md)。
+
 ```
 src/
   Plugin.cs                  入口：按模块安装补丁并调用各模块的 Init
@@ -146,6 +148,8 @@ src/
 vendor/BelmontUI/            Belmont UI 上游源码（MIT），由脚本生成，不要手改
 tools/TypeDump/              从 interop 程序集导出类型和成员
 tools/sync-belmontui.ps1     同步 Belmont UI 上游源码到 vendor/BelmontUI
+tools/release.ps1            一键发布：改版本号、编译打包、打标签、发布 GitHub Release
+docs/                        维护文档
 ```
 
 ### 内嵌的 Belmont UI

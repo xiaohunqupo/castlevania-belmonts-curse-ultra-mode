@@ -10,6 +10,10 @@ internal sealed class FeatureAttribute : Attribute
     public FeatureAttribute(string name) => Name = name;
 }
 
+/// <summary>
+/// A named group of patches with its own Harmony id, so it can be unpatched on its own. <see cref="Enabled"/> turns
+/// false at the first failure and stays false until the game restarts; every patch and event handler checks it first.
+/// </summary>
 internal sealed class Feature
 {
     private static readonly Dictionary<string, Feature> byName = new();

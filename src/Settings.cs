@@ -4,7 +4,10 @@ using UnityEngine;
 
 namespace UltraMode;
 
-/// <summary>All values are read live unless noted.</summary>
+/// <summary>
+/// All values are read live unless noted. Section names are numbered so the cfg file keeps this order. Renaming a
+/// section or key leaves the player's old value behind as an orphan and falls back to the default.
+/// </summary>
 internal static class Settings
 {
     internal static ConfigEntry<bool> Enabled = null!;
@@ -23,7 +26,8 @@ internal static class Settings
     internal static ConfigEntry<float> CameraLookRange = null!;
     internal static ConfigEntry<float> CameraLookSpeed = null!;
 
-    internal static ConfigEntry<bool> EvasionInvulnerable = null!;    internal static ConfigEntry<string> EvasionActionKeywords = null!;
+    internal static ConfigEntry<bool> EvasionInvulnerable = null!;
+    internal static ConfigEntry<string> EvasionActionKeywords = null!;
     internal static ConfigEntry<bool> EvasionUsesDodgeFeature = null!;
 
     internal static ConfigEntry<bool> TechRecovery = null!;
@@ -75,7 +79,8 @@ internal static class Settings
         CameraLookSpeed = cfg.Bind("01 Fast Response", "CameraLookSpeed", 2f,
             new ConfigDescription("右摇杆观察镜头移动和回正的速度倍率。", new AcceptableValueRange<float>(1f, 4f)));
 
-        EvasionInvulnerable = cfg.Bind("02 Evasion", "Invulnerable", true, "滑铲、后撤步过程中无敌（陷阱、即死区域仍然有效）。");        EvasionActionKeywords = cfg.Bind("02 Evasion", "ActionKeywords", "slide,backdash,back_dash,glissade,dodge",
+        EvasionInvulnerable = cfg.Bind("02 Evasion", "Invulnerable", true, "滑铲、后撤步过程中无敌（陷阱、即死区域仍然有效）。");
+        EvasionActionKeywords = cfg.Bind("02 Evasion", "ActionKeywords", "slide,backdash,back_dash,glissade,dodge",
             "动作名包含这些关键词（逗号分隔，不区分大小写）时视为闪避动作。开 DebugLogging 可在日志里看到动作名。");
         EvasionUsesDodgeFeature = cfg.Bind("02 Evasion", "DetectByDodgeFeature", true, "带有闪避位移组件（DodgeMovementFeature）的动作也视为闪避动作。");
 
@@ -105,10 +110,15 @@ internal static class Settings
         DumpKey = cfg.Bind("99 Debug", "DumpKey", new KeyboardShortcut(KeyCode.F11), "把主角动作、魔导器、能力等运行时数据导出到 BepInEx/ultra_mode_dump/。");
     }
 
+    /// <summary>The master switch (F10). Features check it on every use, so turning it off restores vanilla at once.</summary>
     internal static bool On => Enabled.Value;
 
     private static readonly List<(ConfigEntryBase entry, Action action)> listeners = new();
 
+    /// <summary>
+    /// Runs <paramref name="action"/> when any of <paramref name="entries"/> changes, whether from a settings page or
+    /// an edited cfg file. Needed only where a setting was baked into game data, e.g. rescaled frame numbers.
+    /// </summary>
     internal static void OnChanged(Action action, params ConfigEntryBase[] entries)
     {
         foreach (var entry in entries) listeners.Add((entry, action));
@@ -124,6 +134,7 @@ internal static class Settings
         }
     }
 
+    /// <summary>A comma-separated entry as trimmed, lowercased items.</summary>
     internal static string[] Keywords(ConfigEntry<string> entry) =>
         entry.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(s => s.ToLowerInvariant()).ToArray();
 }

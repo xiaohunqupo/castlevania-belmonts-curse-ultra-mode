@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 
 // Usage: TypeDump <interopDir> <assemblyName> <typeRegex> [--members] [--out file]
 // Lists interop types whose full name matches typeRegex; --members also dumps fields/properties/methods.
+// Reads the dlls as metadata only, so it works with the game closed and never loads Unity or IL2CPP.
+// Output files belong in tools/*.txt, which is gitignored: they are derived from the game's code.
 var dir = args[0];
 var asmName = args[1];
 var regex = new Regex(args[2], RegexOptions.IgnoreCase);

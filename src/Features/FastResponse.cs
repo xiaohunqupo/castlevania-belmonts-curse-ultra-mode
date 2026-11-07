@@ -13,6 +13,7 @@ namespace UltraMode.Features;
 /// </summary>
 internal static class FrameScaler
 {
+    /// <summary>Int fields named like frames that are durations or ids, not positions on the action's timeline.</summary>
     private static readonly string[] excluded = { "hitstop", "invulnerab", "slowmo", "version", "recoverinvul" };
 
     internal sealed class FrameField
@@ -36,6 +37,7 @@ internal static class FrameScaler
     }
 
     private static readonly Dictionary<IntPtr, Plan> plans = new();
+    /// <summary>Feature objects can be shared by several actions; only the first plan to reach one rescales it.</summary>
     private static readonly HashSet<IntPtr> claimed = new();
 
     internal static bool Has(ActionData data) => plans.ContainsKey(data.Pointer);
@@ -124,6 +126,10 @@ internal static class FrameScaler
     }
 }
 
+/// <summary>
+/// Decides which actions <see cref="FrameScaler"/> rescales (attacks, whip, turn/stop reactions, crouch and mirror)
+/// and retargets ground speed and acceleration on the player's movement state every update.
+/// </summary>
 [Feature("FastResponse")]
 internal static class FastResponse
 {
