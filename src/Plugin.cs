@@ -1,0 +1,85 @@
+using System.Reflection;
+using BepInEx;
+using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
+using UnityEngine;
+
+namespace UltraMode;
+
+[BepInPlugin(Id, Name, Version)]
+[BepInDependency(Menu.SettingsPage.MinimapGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(Menu.SettingsPage.BelmontUiGuid, BepInDependency.DependencyFlags.SoftDependency)]
+public sealed class Plugin : BasePlugin
+{
+    public const string Id = "ultra_mode.belmontscurse";
+    public const string Name = "Ultra Mode";
+    public const string Version = "0.1.0";
+
+    internal static ManualLogSource Logger = null!;
+    internal static Plugin Instance = null!;
+
+    public override void Load()
+    {
+        Instance = this;
+        Logger = Log;
+        Settings.Bind(Config);
+        Config.SettingChanged += Settings.Dispatch;
+
+        var groups = typeof(Plugin).Assembly.GetTypes()
+            .Select(type => (type, feature: type.GetCustomAttribute<FeatureAttribute>()))
+            .Where(x => x.feature != null)
+            .GroupBy(x => x.feature!.Name, x => x.type);
+
+        foreach (var group in groups)
+        {
+            var feature = Feature.Get(group.Key);
+            try
+            {
+                foreach (var type in group)
+                {
+                    if (type.IsDefined(typeof(HarmonyLib.HarmonyPatch), false))
+                        feature.Harmony.CreateClassProcessor(type).Patch();
+                    type.GetMethod("Init", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?.Invoke(null, null);
+                }
+            }
+            catch (Exception e)
+            {
+                feature.Fail(e);
+                feature.Harmony.UnpatchSelf();
+            }
+        }
+
+        AddComponent<UltraModeBehaviour>();
+        Menu.SettingsPage.Register(this);
+
+        var enabled = Feature.All.Where(f => f.Enabled).Select(f => f.Name).ToList();
+        Log.LogInfo($"{Name} {Version} loaded; {enabled.Count}/{Feature.All.Count()} features active: {string.Join(", ", enabled)}. Toggle: {Settings.ToggleKey.Value}.");
+    }
+
+    public override bool Unload()
+    {
+        Feature.UnpatchAll();
+        return true;
+    }
+}
+
+internal sealed class UltraModeBehaviour : MonoBehaviour
+{
+    public UltraModeBehaviour(IntPtr ptr) : base(ptr) { }
+
+    private void Update()
+    {
+        try
+        {
+            if (Settings.DumpKey.Value.IsDown()) Inspector.DumpAll();
+            if (!Settings.ToggleKey.Value.IsDown()) return;
+            Settings.Enabled.Value = !Settings.Enabled.Value;
+            Plugin.Logger.LogMessage($"Ultra Mode {(Settings.Enabled.Value ? "ON" : "OFF")}");
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError(e);
+            enabled = false;
+        }
+    }
+}

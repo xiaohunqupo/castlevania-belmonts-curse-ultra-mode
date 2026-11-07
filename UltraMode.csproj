@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>UltraMode</AssemblyName>
+    <RootNamespace>UltraMode</RootNamespace>
+    <Version>0.1.0</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GamePath Condition="'$(GamePath)' == '' and '$(BELMONTS_CURSE_DIR)' != ''">$(BELMONTS_CURSE_DIR)</GamePath>
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Castlevania Belmont's Curse</GamePath>
+    <PluginDir>$(GamePath)\BepInEx\plugins\UltraMode</PluginDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+    <Compile Include="vendor/BelmontUI/*.cs" />
+    <Reference Include="$(GamePath)/BepInEx/core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/core/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/core/BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/core/0Harmony.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/core/Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/core/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(GamePath)/BepInEx/interop/*.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CheckGamePath" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GamePath)/BepInEx/interop/Assembly-CSharp.dll')"
+           Text="GamePath='$(GamePath)' has no BepInEx/interop. Install BepInEx 6 IL2CPP (be.788), run the game once, or pass -p:GamePath=..." />
+  </Target>
+
+  <!-- Declared before Deploy so the zip is produced even when the running game locks the installed DLL. -->
+  <Target Name="Package" AfterTargets="Build" Condition="'$(SkipPackage)' != 'true'">
+    <PropertyGroup>
+      <PackageRoot>$(BaseIntermediateOutputPath)package/</PackageRoot>
+      <PackageFile>$(MSBuildProjectDirectory)/dist/$(AssemblyName)-v$(Version).zip</PackageFile>
+    </PropertyGroup>
+    <RemoveDir Directories="$(PackageRoot)" />
+    <Copy SourceFiles="$(TargetPath);README.md" DestinationFolder="$(PackageRoot)BepInEx/plugins/UltraMode" />
+    <Copy SourceFiles="vendor/BelmontUI/LICENSE" DestinationFiles="$(PackageRoot)BepInEx/plugins/UltraMode/BelmontUI-LICENSE.txt" />
+    <MakeDir Directories="dist" />
+    <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageFile)" Overwrite="true" />
+    <Message Importance="high" Text="UltraMode packaged to $(PackageFile)" />
+  </Target>
+
+  <Target Name="Deploy" AfterTargets="Build" Condition="'$(SkipDeploy)' != 'true'">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDir)" />
+    <Copy SourceFiles="README.md" DestinationFolder="$(PluginDir)" />
+    <Copy SourceFiles="vendor/BelmontUI/LICENSE" DestinationFiles="$(PluginDir)/BelmontUI-LICENSE.txt" />
+    <Message Importance="high" Text="UltraMode deployed to $(PluginDir)" />
+  </Target>
+</Project>
