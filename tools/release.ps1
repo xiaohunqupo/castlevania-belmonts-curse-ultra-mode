@@ -26,6 +26,14 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 
 function Step($text) { Write-Host "==> $text" -ForegroundColor Cyan }
 function Fail($text) { Write-Host "release: $text" -ForegroundColor Red; exit 1 }
+# Whether a command succeeds, output discarded. Windows PowerShell turns redirected stderr of a native command
+# into an error record, which $ErrorActionPreference = "Stop" would make fatal.
+function Succeeds {
+    $ErrorActionPreference = "Continue"
+    $command, $rest = $args
+    & $command @rest *> $null
+    return $LASTEXITCODE -eq 0
+}
 function Run {
     $command, $rest = $args
     & $command @rest
@@ -34,15 +42,13 @@ function Run {
 
 Step "Checking tools and repository"
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { Fail "GitHub CLI not found. Install it with: winget install GitHub.cli" }
-gh auth status *> $null
-if ($LASTEXITCODE -ne 0) { Fail "GitHub CLI is not logged in. Run: gh auth login" }
+if (-not (Succeeds gh auth status)) { Fail "GitHub CLI is not logged in. Run: gh auth login" }
 if ((git branch --show-current) -ne "main") { Fail "releases are made from main" }
 if (git status --porcelain) { Fail "working tree has uncommitted changes; commit or stash them first" }
 Run git fetch origin main --tags --quiet
 if ((git rev-parse HEAD) -ne (git rev-parse origin/main)) { Fail "main differs from origin/main; pull or push first" }
 if (git tag --list $tag) { Fail "tag $tag already exists" }
-gh release view $tag -R $repo *> $null
-if ($LASTEXITCODE -eq 0) { Fail "release $tag already exists on GitHub" }
+if (Succeeds gh release view $tag -R $repo) { Fail "release $tag already exists on GitHub" }
 
 Step "Version $Version"
 $csprojText = [IO.File]::ReadAllText($csproj)
