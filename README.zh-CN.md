@@ -115,6 +115,7 @@
 
 ## 问题排查
 
+- 第一次启动卡在 `Downloading unity base libraries from https://unity.bepinex.dev/libraries/2022.3.62.zip` 或下载失败：这是 BepInEx 在下载 Unity 引擎的基础库（Unity 的闭源程序集，不能随本 mod 分发）。可以用浏览器或其他工具手动下载这个链接，把 `2022.3.62.zip` 原样放进 `BepInEx/unity-libs/`（没有这个文件夹就新建，不用解压），再启动游戏，BepInEx 会直接使用它。游戏更新后版本号可能变化，以日志里显示的链接为准。
 - 设置页或某个功能没有出现：查看 `BepInEx/LogOutput.log` 中 `Ultra Mode` 和 `[ui]` 开头的行。
 - 提交问题时请附上 `LogOutput.log`、游戏版本和本 mod 的版本；需要的话打开 `DebugLogging` 和"快捷键导出调试数据"，并按 F11 附上导出的数据。
 

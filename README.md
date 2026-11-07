@@ -117,6 +117,7 @@ If a hotkey clashes with another mod, turn it off on the settings page ("Toggle 
 
 ## Troubleshooting
 
+- The first start hangs at `Downloading unity base libraries from https://unity.bepinex.dev/libraries/2022.3.62.zip`, or the download fails: BepInEx is fetching Unity's base libraries (Unity's closed-source assemblies, which this mod can't redistribute). Download that link by other means and put `2022.3.62.zip` as is into `BepInEx/unity-libs/` (create the folder if needed, don't extract it), then start the game; BepInEx uses the local file. The version can change after a game update, so use the link shown in your log.
 - A feature or the settings page is missing: look for lines starting with `Ultra Mode` or `[ui]` in `BepInEx/LogOutput.log`.
 - When reporting a problem, attach `LogOutput.log`, the game version and the mod version. If asked, turn on `DebugLogging` and the debug dump hotkey, then attach the F11 dump.
 

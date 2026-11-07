@@ -76,5 +76,6 @@ powershell -File tools/release.ps1 0.2.0
 - `reference/`：反编译的游戏代码和其他 mod 的代码，只供本地参考。
 - `tools/*.txt`：从游戏程序集导出的类型列表。
 - 任何游戏文件、资源，包括 `BepInEx/interop/` 下的程序集。
+- `BepInEx/unity-libs/`：Unity 引擎的基础库（`UnityEngine.*Module.dll`，Unity Technologies 的闭源代码）。BepInEx 首次启动时会从 unity.bepinex.dev 下载；只要 `unity-libs/` 下有同名 zip 就不会下载，但我们没有再分发它的授权，所以整合包不带它，README 里只说明手动放置的方法。
 
 这些都已在 `.gitignore` 里，提交前用 `git status` 确认没有被强制加入。

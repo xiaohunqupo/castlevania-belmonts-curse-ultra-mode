@@ -79,7 +79,9 @@ $entries | ForEach-Object { Write-Host "    $_" }
 $fullEntries = Entries $fullZip
 $bundled = "winhttp.dll", "doorstop_config.ini", "BepInEx/core/BepInEx.Unity.IL2CPP.dll", "BepInEx/third-party/NOTICE.md", "BepInEx/third-party/licenses/BepInEx.txt"
 foreach ($required in $plugin + $bundled) { if ($fullEntries -notcontains $required) { Fail "$required is missing from $fullZip" } }
-if ($fullEntries | Where-Object { $_ -like "BepInEx/interop/*" -or $_ -like "BepInEx/config/*" }) { Fail "$fullZip contains generated BepInEx files" }
+if ($fullEntries | Where-Object { $_ -like "BepInEx/interop/*" -or $_ -like "BepInEx/config/*" -or $_ -like "BepInEx/unity-libs/*" }) {
+    Fail "$fullZip contains files derived from the game or Unity (interop, config, unity-libs)"
+}
 Write-Host "    $(Split-Path $fullZip -Leaf): $($fullEntries.Count) files"
 
 if ($DryRun) {
