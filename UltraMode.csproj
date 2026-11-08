@@ -3,7 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>UltraMode</AssemblyName>
     <RootNamespace>UltraMode</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Danny许</Authors>
     <Company>Danny许</Company>
     <Product>Ultra Mode</Product>
