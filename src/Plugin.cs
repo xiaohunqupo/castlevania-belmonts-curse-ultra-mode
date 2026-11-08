@@ -79,6 +79,7 @@ internal sealed class UltraModeBehaviour : MonoBehaviour
 
     private void Update()
     {
+        Menu.ScrollFollow.Update();
         try
         {
             if (Settings.DumpKeyEnabled.Value && Settings.DumpKey.Value.IsDown()) Inspector.DumpAll();

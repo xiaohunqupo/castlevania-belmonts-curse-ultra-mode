@@ -37,7 +37,7 @@ internal static class SettingsRows
         Slider(Settings.CameraLookSpeed, 1f, 4f, 0.05f, "右摇杆观察速度", "Right-stick look speed", "镜头移动和回正的速度", "How fast the camera moves out and recenters"),
         Slider(Settings.MirrorSpeed, 1f, 5f, 0.05f, "镜子传送速度", "Mirror travel speed", "进出镜子的动画，1 为原速", "Entering/exiting animation, 1 is vanilla"),
         Toggle(Settings.InstantMirror, "镜子即按即进", "Instant mirror entry", "镜子前按下不需要按住", "No need to hold down at a mirror"),
-        Toggle(Settings.MirrorPrompt, "镜子提示按下交互", "Mirror down prompt", "镜子前的交互提示加上按 下 交互", "Adds the down input to the mirror prompt"),
+        Toggle(Settings.MirrorPrompt, "镜子提示下传送", "Mirror teleport prompt", "镜子前提示 保存/信息 和 下 传送", "Shows Save/Info and Down Teleport at mirrors"),
 
         Toggle(Settings.WhipSkipEmpty, "无目标时不出钩锁", "No empty whip", "没有可钩的东西时按钩锁不打断动作", "Pressing whip with nothing to hook does nothing"),
         Toggle(Settings.WhipAutoAim, "钩锁自动瞄准", "Whip auto-aim", "只有一个高亮目标时不管朝向都能钩中", "A lone highlighted target is hooked whatever you face"),
@@ -50,11 +50,9 @@ internal static class SettingsRows
 
         Toggle(Settings.RepairMirrors, "修复破碎镜子", "Repair broken mirrors", "隐士任务后损坏的传送镜子恢复可用", "Teleport mirrors broken after The Hermit work again"),
 
-        Toggle(Settings.PassiveCharms, "自动装备正面魔导器", "Auto-equip relics without drawbacks", "获得即生效，不占装备槽", "Active once found, no slot needed"),
+        Toggle(Settings.PassiveCharms, "自动装备正面魔导器", "Auto-equip relics without drawbacks", "获得即生效，不用装备", "Active once found, no slot needed"),
         Toggle(Settings.PassiveDrawbackCharms, "自动装备负面魔导器", "Auto-equip relics with drawbacks", "焦黑之心、地狱徽记、别西卜之印、苍白之刺、亡灵指环", "Blackened Heart, Infernal Medallion, Beelzebub's Seal, Pale Thorn, Phantom Ring"),
         Toggle(Settings.ForceRevealSecret, "强制开启洞幽石", "Always-on Gloomstone", "没获得也生效，靠近时显示隐藏墙壁", "Works even if not found; reveals hidden walls nearby"),
-        Toggle(Settings.DebugLogging, "调试日志", "Debug logging", "把动作等事件写入 LogOutput.log", "Writes action events to LogOutput.log"),
-        Toggle(Settings.DumpKeyEnabled, "快捷键导出调试数据", "Debug dump hotkey", "默认 F11，排查问题时再打开", "F11 by default; only needed when reporting a bug"),
     };
 
     internal static void Save() => Plugin.Instance.Config.Save();
