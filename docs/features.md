@@ -103,16 +103,18 @@
 
 - 补丁：`FastTravelMenuManager.IsDeathTrapActive` 后置：返回 `false`，解除快速传送锁定。
 - **不能给 `GPE_Mirror.CanUseMirror` 打补丁**：这个函数太短，原生 detour 搬走开头指令时会把里面的短跳转搬坏。曾经的后置补丁让镜之厅最上层那面镜子一被检查就崩溃（`GameAssembly.dll` 里 `0x80000003`，落在 `CanUseMirror` 内部）。
-- 场景替换：剧情推进后存档室会显示一面"破碎"的镜子，原来的镜子仍在场景里但被隐藏。只处理 `SavePoint` 下面的破镜子，并且要求两面镜子的最近公共祖先下只有它们两面；镜之厅中枢里按目的地分组的镜子不动。找到后隐藏破碎分支、激活原分支，关掉开关时当场还原。房间加载后的 120 帧内每帧检查，让替换发生在转场中；之后每 60 帧检查一次。
+- 场景替换：剧情推进后存档室会显示一面"破碎"的镜子，原来的镜子仍在场景里但被隐藏。原镜子和破镜子是同一层的兄弟节点，名字只差 `Broken`（存档室 `GPE_MirrorBase_Broken` / `GPE_MirrorBase`，镜之厅中枢 `GPE_MirrorBase_Cemetery_04_Broken` / `GPE_MirrorBase_Cemetery_04`），只按这个规则配对。中枢里一个分组下有很多镜子，用更宽松的规则会配错。没有这种兄弟节点的破镜子（中枢的 `HallOfMirrors_01`~`04`）不处理。找到后隐藏破碎节点、激活原节点，关掉开关时当场还原。房间加载后的 120 帧内每帧检查，让替换发生在转场中；之后每 60 帧检查一次。
 - 没用过的存档室镜子仍然不能传送（原版规则）；暗影镜子等非 `BaseMirror` 不处理。
 - 配置：`RepairMirrors`。
 
 ## MirrorPrompt
 
-`src/Features/MirrorPrompt.cs`。站在可传送的镜子前时，交互提示后面加上"下 交互"。
+`src/Features/MirrorPrompt.cs`。站在可传送的镜子前时，交互提示改成"保存"（存档点下的镜子）或"信息"（其他镜子），后面加上"下 传送"。
 
 - 挂在：`ActionTracker.Updated`。
-- 找到源文本里带 `<input="...Interact...">` 标签的 `InputTagTextPreprocessor`，复制一份标签指向移动操作的"下"方向，再交给游戏自己的 `PreprocessText` 转成当前设备的按键图标。
+- 找到源文本里带 `<input="...Interact...">` 标签的 `InputTagTextPreprocessor`，加一段标签指向移动操作的"下"方向，再交给游戏自己的 `PreprocessText` 转成当前设备的按键图标。
+- 文字：交互标签后面只有一个短词时才换成"保存/信息"，更长的文字保留游戏原文。原文里有汉字就用中文，否则用 Save/Info/Teleport。
+- 能否传送由游戏自己的 `GPE_Mirror.CanUseMirror` 判断（它不能打补丁，见 MirrorRepair）；每面镜子的检查单独 `try/catch`，出错的镜子只跳过它自己。
 - "下"方向的标签写法在数据里看不到，所以 `DownTag` 会生成几种候选写法，让游戏的 `GetActionFromInputTag` 解析，第一个解析到 down 的生效，结果按输入资源缓存。
 - 离开镜子、关闭选项时恢复原文本。切换语言或输入设备时游戏会重写源文本，所以每次都重新读取。
 - 配置：`MirrorPrompt`。

@@ -21,7 +21,7 @@ The goal is simple: remove the parts of the controls that feel frustrating, so t
 | Knockback recovery | While knocked back (flying, rolling on landing, getting up), press Jump to stop at once and regain control. Knockback momentum is cleared and the shield relic's flash plays. |
 | Whip assist | Targets are first searched in the vanilla direction (enemies and anchors). If there is nothing that way and only one reachable highlighted anchor nearby, it is hooked automatically. With nothing to hook, the whip button does nothing and doesn't interrupt your action. Anchors are highlighted only when they can actually be reached. |
 | Attack parry | Once parry is unlocked, normal attacks parry within the same frame window as the parry move. On success the attack keeps going and only the parry effects play; further enemy hits are ignored for the length of the vanilla parry-success action. |
-| Mirrors | Press Down at a mirror to enter at once, no holding. At mirrors you can travel from, the interact prompt adds "Down Interact" with the game's own button icons. Teleport mirrors broken after The Hermit work again and fast travel is no longer locked (save-room mirrors you never used still can't be travelled to, as in vanilla). |
+| Mirrors | Press Down at a mirror to enter at once, no holding. At mirrors you can travel from, the interact prompt reads "Save" (at a save point) or "Info" and adds "Down Teleport", with the game's own button icons. Teleport mirrors broken after The Hermit work again and fast travel is no longer locked (save-room mirrors you never used still can't be travelled to, as in vanilla). |
 | Passive relics | Relics with auto-equip on are active once found, without a slot (only relics you own; missing ones stay inactive). Relics without and with drawbacks have separate switches; by default only the ones without drawbacks are auto-equipped. Other relics are equipped by hand as in vanilla. |
 | Always-on Gloomstone | The Gloomstone's effect is always on, even before you find it: breakable hidden walls show when you are near (on by default, can be turned off). |
 
@@ -76,7 +76,7 @@ Texts are in Simplified Chinese when the game is, English otherwise.
 | F10 | Turn Ultra Mode on or off (`ToggleKey`) | On |
 | F11 | Dump runtime data (actions, relics, feedbacks...) to `BepInEx/ultra_mode_dump/` for debugging (`DumpKey`) | Off |
 
-If a hotkey clashes with another mod, turn it off on the settings page ("Toggle hotkey", "Debug dump hotkey") or with `ToggleKeyEnabled` / `DumpKeyEnabled` in the config file. To use a different key, change `ToggleKey` / `DumpKey`, e.g. `F9`, or `F10 + LeftControl` for Ctrl+F10 (the main key comes first).
+If a hotkey clashes with another mod, turn it off on the settings page ("Toggle hotkey") or with `ToggleKeyEnabled` / `DumpKeyEnabled` in the config file. To use a different key, change `ToggleKey` / `DumpKey`, e.g. `F9`, or `F10 + LeftControl` for Ctrl+F10 (the main key comes first).
 
 ### Config file
 
@@ -91,7 +91,7 @@ If a hotkey clashes with another mod, turn it off on the settings page ("Toggle 
 | `04 World` | Repair broken mirrors |
 | `05 Charms` | Auto-equip relics without / with drawbacks, the drawback relic list, always-on Gloomstone |
 | `06 Whip` | No empty whip, auto-aim, highlight reachable anchors only |
-| `99 Debug` | Debug logging, dump hotkey (off by default) |
+| `99 Debug` | Debug logging, dump hotkey (off by default; config file only) |
 
 ### Relics
 
@@ -119,7 +119,7 @@ If a hotkey clashes with another mod, turn it off on the settings page ("Toggle 
 
 - The first start hangs at `Downloading unity base libraries from https://unity.bepinex.dev/libraries/2022.3.62.zip`, or the download fails: BepInEx is fetching Unity's base libraries (Unity's closed-source assemblies, which this mod can't redistribute). Download that link by other means and put `2022.3.62.zip` as is into `BepInEx/unity-libs/` (create the folder if needed, don't extract it), then start the game; BepInEx uses the local file. The version can change after a game update, so use the link shown in your log.
 - A feature or the settings page is missing: look for lines starting with `Ultra Mode` or `[ui]` in `BepInEx/LogOutput.log`.
-- When reporting a problem, attach `LogOutput.log`, the game version and the mod version. If asked, turn on `DebugLogging` and the debug dump hotkey, then attach the F11 dump.
+- When reporting a problem, attach `LogOutput.log`, the game version and the mod version. If asked, set `DebugLogging` and `DumpKeyEnabled` to `true` in the config file, then attach the F11 dump.
 
 ## Build
 
@@ -159,7 +159,7 @@ src/
     WhipAssist.cs            Whip assist (WhipHookDetect.FindEntityTarget probing, anchor highlight)
     AttackParry.cs           Parry window on attacks (ParryFeature.StartParry/StopParry) and the protection after success
     MirrorRepair.cs          Repairs broken mirrors, unlocks fast travel
-    MirrorPrompt.cs          "Down Interact" prompt at mirrors (InputTagTextPreprocessor)
+    MirrorPrompt.cs          "Save/Info" and "Down Teleport" prompt at mirrors (InputTagTextPreprocessor)
     PassiveCharms.cs         Passive relics, always-on Gloomstone
   Menu/
     SettingsRows.cs          Every row of the settings page (single definition shared by all menus)

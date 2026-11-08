@@ -37,7 +37,7 @@ Settings page: on Belmont Minimap's MODS tab
 
 ### F11 导出
 
-F11 快捷键默认关闭，先打开 `99 Debug / DumpKeyEnabled`（设置页"快捷键导出调试数据"）。之后按 F11 把运行时数据写到 `BepInEx/ultra_mode_dump/`（`Inspector.DumpAll`）：
+F11 快捷键默认关闭，先在配置文件里打开 `99 Debug / DumpKeyEnabled`（设置页里没有这一行）。之后按 F11 把运行时数据写到 `BepInEx/ultra_mode_dump/`（`Inspector.DumpAll`）：
 
 | 文件 | 内容 |
 | --- | --- |
