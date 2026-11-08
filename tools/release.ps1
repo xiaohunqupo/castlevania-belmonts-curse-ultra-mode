@@ -64,7 +64,7 @@ if ($csprojVersion -ne $Version -or $pluginVersion -ne $Version) {
 }
 
 Step "Building"
-Run dotnet build -c Release -p:SkipDeploy=true -nologo -v:minimal -warnaserror
+Run dotnet build -c Release "-p:SkipDeploy=true" -nologo "-v:minimal" -warnaserror
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 function Entries($file) {
     if (-not (Test-Path $file)) { Fail "$file was not produced" }
