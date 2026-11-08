@@ -40,11 +40,12 @@ internal static class Inspector
         Write("mirrors.txt", sb =>
         {
             var player = Player.Get();
-            foreach (var m in FindAll<GPE_Mirror>().OrderBy(m => m.name))
+            foreach (var m in FindAll<GPE_Mirror>().Where(m => m.gameObject.scene.IsValid()).OrderBy(m => TransformPath(m.transform)))
             {
                 string usable;
                 try { usable = player == null ? "?" : m.CanUseMirror(player).ToString(); } catch (Exception e) { usable = $"!{e.GetType().Name}"; }
-                sb.AppendLine($"==== {m.name} scene={m.gameObject.scene.name} active={m.isActiveAndEnabled} type={m.mirrorType} teleport={m.IsATeleportMirror} canUse={usable}");
+                var key = m.useMirrorCondition?.TryCast<EntityConditionCheckProgressKey>()?.progressionKeyToCheck?.name;
+                sb.AppendLine($"==== {TransformPath(m.transform)} active={m.gameObject.activeInHierarchy} type={m.mirrorType} teleport={m.IsATeleportMirror} canUse={usable} key={key ?? "-"}");
                 DumpValue(sb, m.useMirrorCondition, 1, 4, new HashSet<IntPtr>(), true);
             }
         });
@@ -56,6 +57,8 @@ internal static class Inspector
         Write("charms.txt", DumpCharms);
         Plugin.Logger.LogMessage($"Ultra Mode dump written to {Dir}");
     }
+
+    private static string TransformPath(Transform t) => t.parent == null ? $"{t.gameObject.scene.name}:{t.name}" : $"{TransformPath(t.parent)}/{t.name}";
 
     private static void Write(string file, Action<StringBuilder> body)
     {

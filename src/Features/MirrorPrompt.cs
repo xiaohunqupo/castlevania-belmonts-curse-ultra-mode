@@ -7,8 +7,9 @@ namespace UltraMode.Features;
 
 /// <summary>
 /// Mirror rooms only prompt the interact button, although crouching at the mirror also enters it. While the player
-/// stands at an ordinary mirror, the interact prompt's tagged source text gets a copy of itself pointing at the
-/// "down" part of the move action, and the game's own preprocessor turns both tags into device-specific icons.
+/// stands at a mirror that can teleport, the interact prompt's tagged source text gets a second entry pointing at the
+/// "down" part of the move action, labelled Teleport, and the interact entry is relabelled by what it does there:
+/// Save at a save point, Info elsewhere. The game's own preprocessor turns both tags into device-specific icons.
 /// </summary>
 [Feature("MirrorPrompt")]
 internal static class MirrorPrompt
@@ -22,7 +23,9 @@ internal static class MirrorPrompt
     private sealed class Prompt
     {
         internal readonly InputTagTextPreprocessor Tags;
-        internal string? Source, Applied;
+        /// <summary>The game's text, what we wrote into the source, and its preprocessed result.</summary>
+        internal string? Source, Combined, Applied;
+        internal bool SaveRoom;
         internal Prompt(InputTagTextPreprocessor tags) => Tags = tags;
     }
 
@@ -34,7 +37,6 @@ internal static class MirrorPrompt
     private static readonly Dictionary<IntPtr, string?> downTags = new();
     private static int nextScan;
     private static bool wasNear;
-
     internal static void Init()
     {
         ActionTracker.Updated += (e, _) =>
@@ -54,8 +56,8 @@ internal static class MirrorPrompt
             nextScan = Time.frameCount + ScanInterval;
             ScanMirrors();
         }
-        var near = Settings.On && Settings.MirrorPrompt.Value && NearMirror(e);
-        if (!near)
+        var mirror = Settings.On && Settings.MirrorPrompt.Value ? UsableMirrorNear(e) : null;
+        if (mirror == null)
         {
             if (wasNear) RestoreAll();
             wasNear = false;
@@ -67,28 +69,39 @@ internal static class MirrorPrompt
             ScanPrompts();
             if (prompts.Count == 0 && reported.Add(IntPtr.Zero)) Log.Debug("MirrorPrompt: at a mirror but no tagged interact prompt found");
         }
+        var saveRoom = MirrorRepair.InSavePoint(mirror);
         foreach (var p in prompts)
         {
             if (p.Tags == null || p.Tags.WasCollected || !p.Tags.gameObject.activeInHierarchy) continue;
             var text = p.Tags.text;
-            if (text == null || (p.Applied != null && text.text == p.Applied)) continue;
-            Apply(p);
+            if (text == null || (p.Applied != null && text.text == p.Applied && p.SaveRoom == saveRoom)) continue;
+            Apply(p, saveRoom);
         }
     }
 
     /// <summary>The source is re-read every time: localization or a device change rewrites both it and the text.</summary>
-    private static void Apply(Prompt p)
+    private static void Apply(Prompt p, bool saveRoom)
     {
         var current = p.Tags._initialText;
         if (string.IsNullOrEmpty(current)) return;
-        if (p.Source == null || !current.StartsWith(p.Source, StringComparison.Ordinal) || current == p.Source) p.Source = current;
+        if (p.Source == null || current != p.Combined) p.Source = current;
         var match = InputTag.Match(p.Source);
         if (!match.Success) return;
         var down = DownTag(p.Tags, match.Groups[1].Value);
         if (down == null) return;
 
-        var copy = p.Source.Remove(match.Groups[1].Index, match.Groups[1].Length).Insert(match.Groups[1].Index, down);
-        var combined = p.Source + Separator + copy;
+        var rest = p.Source[(match.Index + match.Length)..];
+        var label = rest.Trim();
+        var gap = rest[..(rest.Length - rest.TrimStart().Length)];
+        var chinese = label.Any(c => c >= '\u4e00' && c <= '\u9fff');
+        // Only a plain one-word label is replaced; anything longer is the game's own wording and stays.
+        var interact = label.Length is > 0 and <= 12 && !label.Contains('\n')
+            ? p.Source[..(match.Index + match.Length)] + gap + (saveRoom ? (chinese ? "保存" : "Save") : (chinese ? "信息" : "Info"))
+            : p.Source;
+        var teleport = $"<input=\"{down}\">{(gap.Length > 0 ? gap : " ")}{(chinese ? "传送" : "Teleport")}";
+        var combined = interact + Separator + teleport;
+        p.Combined = combined;
+        p.SaveRoom = saveRoom;
         p.Tags._initialText = combined;
         p.Applied = p.Tags.PreprocessText(combined);
         p.Tags.text.text = p.Applied;
@@ -168,7 +181,7 @@ internal static class MirrorPrompt
     }
 
     /// <summary>Only a mirror that can teleport right now: an unused save room's mirror only saves.</summary>
-    private static bool NearMirror(Entity e)
+    private static GPE_Mirror? UsableMirrorNear(Entity e)
     {
         var position = e.transform.position;
         foreach (var (mirror, point, radius) in mirrors)
@@ -177,7 +190,7 @@ internal static class MirrorPrompt
             if (mirror == null || mirror.WasCollected || failing.Contains(mirror.Pointer)) continue;
             try
             {
-                if (mirror.IsATeleportMirror && mirror.CanUseMirror(e)) return true;
+                if (mirror.IsATeleportMirror && mirror.CanUseMirror(e)) return mirror;
             }
             catch (Exception ex)
             {
@@ -185,7 +198,7 @@ internal static class MirrorPrompt
                 Log.Debug($"MirrorPrompt: {Path(mirror.transform)} can't be checked, skipped: {ex.Message}");
             }
         }
-        return false;
+        return null;
     }
 
     private static string Path(Transform t) => t.parent == null ? $"{t.gameObject.scene.name}:{t.name}" : $"{Path(t.parent)}/{t.name}";
@@ -222,7 +235,7 @@ internal static class MirrorPrompt
                     p.Tags._initialText = p.Source;
                     if (p.Tags.text != null) p.Tags.text.text = p.Tags.PreprocessText(p.Source);
                 }
-                p.Applied = null;
+                p.Applied = p.Combined = null;
             }
         }
         catch (Exception ex) { Fix.Fail(ex); }

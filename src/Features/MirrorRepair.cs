@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using MotherBase.EntityFramework;
@@ -87,21 +88,21 @@ internal static class MirrorRepair
 
     private static bool IsBroken(GPE_Mirror m) => ConditionKey(m)?.Contains("Broken", StringComparison.OrdinalIgnoreCase) == true;
 
-    /// <summary>
-    /// Only save room mirrors are repaired. The Hall of Mirrors hub keeps several destination mirrors, some broken by
-    /// design, in groups under one parent; swapping across those groups froze the game when the player came near.
-    /// </summary>
-    private static bool InSavePoint(GPE_Mirror m)
+    /// <summary>A mirror under a save point: its interact button saves.</summary>
+    internal static bool InSavePoint(GPE_Mirror m)
     {
         for (var t = m.transform; t != null; t = t.parent)
             if (t.name.Contains("SavePoint", StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }
 
+    private static readonly Regex BrokenSuffix = new(@"[\s_\-]*Broken", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     /// <summary>
-    /// After The Hermit, save rooms show a broken mirror (condition key ...BrokenMirror) while the original mirror
-    /// stays in the scene, inactive. The branches holding them below their common ancestor are swapped back, but only
-    /// when that ancestor holds no other mirror.
+    /// After The Hermit, a broken mirror (condition key ...BrokenMirror) is shown while the original stays hidden next
+    /// to it under the same name without "Broken": GPE_MirrorBase_Broken / GPE_MirrorBase in save rooms,
+    /// GPE_MirrorBase_Cemetery_04_Broken / GPE_MirrorBase_Cemetery_04 in the Hall of Mirrors hub. Only such twins are
+    /// swapped; the hub groups many mirrors under one parent, so pairing by anything looser picks the wrong one.
     /// </summary>
     private static void SwapBrokenMirrors()
     {
@@ -115,25 +116,9 @@ internal static class MirrorRepair
         {
             if (!broken.gameObject.activeInHierarchy || swapped.Contains(broken.Pointer) || !IsBroken(broken)) continue;
             swapped.Add(broken.Pointer);
-            if (!InSavePoint(broken))
+            if (FindTwin(broken, mirrors) is not var (brokenBranch, intactBranch, intact))
             {
-                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: '{Path(broken.transform)}' is not a save room mirror, left alone");
-                continue;
-            }
-            var scene = broken.gameObject.scene.handle;
-            GPE_Mirror? intact = null;
-            Transform? brokenBranch = null, intactBranch = null;
-            foreach (var m in mirrors)
-            {
-                if (m.gameObject.scene.handle != scene || m.gameObject.activeInHierarchy || IsBroken(m)) continue;
-                var (b, i, common) = Branches(broken.transform, m.transform);
-                if (common == null || b.Pointer == i.Pointer || common.GetComponentsInChildren<GPE_Mirror>(true).Length != 2) continue;
-                (intact, brokenBranch, intactBranch) = (m, b, i);
-                break;
-            }
-            if (intact == null || brokenBranch == null || intactBranch == null)
-            {
-                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: no intact mirror paired with '{Path(broken.transform)}', not swapped");
+                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: no hidden twin for '{Path(broken.transform)}', not swapped");
                 continue;
             }
             var shown = new List<Transform>();
@@ -150,21 +135,26 @@ internal static class MirrorRepair
         }
     }
 
-    /// <summary>The lowest common ancestor and its children that lead to each transform (roots if none).</summary>
-    private static (Transform a, Transform b, Transform? common) Branches(Transform a, Transform b)
+    /// <summary>
+    /// Walking up from the broken mirror, the first object named "...Broken" whose sibling carries the same name
+    /// without it and holds a hidden intact mirror.
+    /// </summary>
+    private static (Transform broken, Transform intact, GPE_Mirror mirror)? FindTwin(GPE_Mirror broken, List<GPE_Mirror> mirrors)
     {
-        var ancestors = new HashSet<IntPtr>();
-        for (var t = a; t != null; t = t.parent) ancestors.Add(t.Pointer);
-        Transform? common = null;
-        for (var t = b; t != null; t = t.parent)
-            if (ancestors.Contains(t.Pointer)) { common = t; break; }
-        return (ChildToward(common, a), ChildToward(common, b), common);
-    }
-
-    private static Transform ChildToward(Transform? ancestor, Transform t)
-    {
-        while (t.parent != null && (ancestor == null || t.parent.Pointer != ancestor.Pointer)) t = t.parent;
-        return t;
+        for (var a = broken.transform; a.parent != null; a = a.parent)
+        {
+            var name = BrokenSuffix.Replace(a.name, "").Trim();
+            if (name == a.name) continue;
+            var parent = a.parent;
+            for (var i = 0; i < parent.childCount; i++)
+            {
+                var sibling = parent.GetChild(i);
+                if (sibling.Pointer == a.Pointer || sibling.name != name) continue;
+                var intact = mirrors.FirstOrDefault(m => !m.gameObject.activeInHierarchy && !IsBroken(m) && m.transform.IsChildOf(sibling));
+                if (intact != null) return (a, sibling, intact);
+            }
+        }
+        return null;
     }
 
     private static string Path(Transform t) => t.parent == null ? t.name : $"{Path(t.parent)}/{t.name}";
