@@ -74,8 +74,8 @@ internal static class Settings
         InstantMirror = cfg.Bind("01 Fast Response", "InstantMirror", true,
             "镜子前蹲下即开始进入镜子，不需要按住。");
         MirrorPrompt = cfg.Bind("01 Fast Response", "MirrorPrompt", true,
-            "站在镜子前时，交互提示后面加上“按 下 交互”。");
-        CameraFollowSpeed = cfg.Bind("01 Fast Response", "CameraFollowSpeed", 2f,
+            "站在能传送的镜子前时，交互提示改为“保存”（存档点）或“信息”，后面加上“下 传送”。");
+        CameraFollowSpeed = cfg.Bind("01 Fast Response", "CameraFollowSpeed", 1.25f,
             new ConfigDescription("镜头跟随人物的速度倍率（镜头阻尼除以这个值），解决快速移动、被弹射时镜头慢一步。", new AcceptableValueRange<float>(1f, 5f)));
         CameraLookRange = cfg.Bind("01 Fast Response", "CameraLookRange", 1.6f,
             new ConfigDescription("右摇杆观察镜头的上下左右最大范围倍率。", new AcceptableValueRange<float>(1f, 3f)));

@@ -234,6 +234,8 @@ internal static class WhipAssist
     /// <summary>
     /// A search that succeeds without an entity is a miss. The lone anchor is forced even when the current aim already
     /// finds it: the real search runs frames later (detectionStartFrame) and the aim may have drifted off it by then.
+    /// An anchor the current aim finds but the aimed probe does not is at the edge of reach and missed by the real
+    /// search, so it counts as nothing, matching its missing highlight.
     /// </summary>
     [HarmonyPatch(typeof(WhipHookDetect), nameof(WhipHookDetect.CanStart)), HarmonyPrefix]
     private static bool CanStart(WhipHookDetect __instance, Entity e, ref bool __result)
@@ -246,6 +248,11 @@ internal static class WhipAssist
             if (state == null) return true;
             var hasNatural = Probe(__instance, e, state, null, out var natural) && natural != null;
             Evaluate(e);
+            if (hasNatural && anchors.Any(a => a.Entity.Pointer == natural!.Pointer && !reachable.Contains(a)))
+            {
+                Log.Debug($"WhipAssist: {natural!.name} found only at the edge of reach, ignored");
+                hasNatural = false;
+            }
             var lone = Settings.WhipAutoAim.Value && reachable.Count == 1 ? reachable[0] : null;
             if (hasNatural && (lone == null || natural!.Pointer != lone.Entity.Pointer)) return Decide($"normal ({natural!.name})", true);
             if (lone != null)
