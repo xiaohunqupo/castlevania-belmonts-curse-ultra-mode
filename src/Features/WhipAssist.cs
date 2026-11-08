@@ -44,6 +44,7 @@ internal static class WhipAssist
     /// <summary>The anchor auto-aim picked for the whip that is starting.</summary>
     private static Anchor? forced;
     private static bool whipRunning;
+    private static int whipStartFrame;
     /// <summary>We are calling Add/RemoveFeedback ourselves, so our prefixes on them let the call through.</summary>
     private static bool selfCall;
     private static string lastDecision = "";
@@ -62,6 +63,12 @@ internal static class WhipAssist
 
     private static void Update(Entity e)
     {
+        if (whipRunning && Time.frameCount > whipStartFrame + 2 && !ActionTracker.IsActive(d => ActionInfo.Feature<WhipHookDetect>(d) != null))
+        {
+            Log.Debug("WhipAssist: whip ended without OnStop");
+            whipRunning = false;
+            forced = null;
+        }
         if (Time.frameCount >= nextScan)
         {
             nextScan = Time.frameCount + ScanInterval;
@@ -224,6 +231,10 @@ internal static class WhipAssist
 
     private static Anchor? Find(WhipDistanceComponent d) => anchors.FirstOrDefault(x => x.Distance != null && !x.Distance.WasCollected && x.Distance.Pointer == d.Pointer);
 
+    /// <summary>
+    /// A search that succeeds without an entity is a miss. The lone anchor is forced even when the current aim already
+    /// finds it: the real search runs frames later (detectionStartFrame) and the aim may have drifted off it by then.
+    /// </summary>
     [HarmonyPatch(typeof(WhipHookDetect), nameof(WhipHookDetect.CanStart)), HarmonyPrefix]
     private static bool CanStart(WhipHookDetect __instance, Entity e, ref bool __result)
     {
@@ -233,12 +244,14 @@ internal static class WhipAssist
             forced = null;
             var state = Player.Comp<WhipHookState>(e);
             if (state == null) return true;
-            if (Probe(__instance, e, state, null, out var natural)) return Decide($"normal ({natural?.name})", true);
+            var hasNatural = Probe(__instance, e, state, null, out var natural) && natural != null;
             Evaluate(e);
-            if (Settings.WhipAutoAim.Value && reachable.Count == 1)
+            var lone = Settings.WhipAutoAim.Value && reachable.Count == 1 ? reachable[0] : null;
+            if (hasNatural && (lone == null || natural!.Pointer != lone.Entity.Pointer)) return Decide($"normal ({natural!.name})", true);
+            if (lone != null)
             {
-                forced = reachable[0];
-                return Decide("auto-aim at " + forced.Entity.name, true);
+                forced = lone;
+                return Decide("auto-aim at " + lone.Entity.name, true);
             }
             if (!Settings.WhipSkipEmpty.Value) return true;
             __result = false;
@@ -274,7 +287,9 @@ internal static class WhipAssist
     [HarmonyPatch(typeof(WhipHookDetect), nameof(WhipHookDetect.OnStart)), HarmonyPostfix]
     private static void OnStart(Entity e)
     {
-        if (Player.Is(e)) whipRunning = true;
+        if (!Player.Is(e)) return;
+        whipRunning = true;
+        whipStartFrame = Time.frameCount;
     }
 
     [HarmonyPatch(typeof(WhipHookDetect), nameof(WhipHookDetect.OnStop)), HarmonyPostfix]
