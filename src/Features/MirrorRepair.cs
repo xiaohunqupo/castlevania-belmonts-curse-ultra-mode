@@ -8,8 +8,10 @@ namespace UltraMode.Features;
 
 /// <summary>
 /// Story progress (the death-trap progression key set around The Hermit) locks fast travel and turns ordinary
-/// teleport mirrors into unusable ones. The fast-travel lock and the broken mirror's condition are forced open; an
-/// ordinary mirror's own condition (the save room has been used) and shade/hostile mirrors keep their rules.
+/// teleport mirrors into unusable ones. The fast-travel lock is forced open and save rooms get their intact mirror
+/// back; an ordinary mirror's own condition (the save room has been used) and shade/hostile mirrors keep their rules.
+/// GPE_Mirror.CanUseMirror must not be patched: the function is too short for the native detour, and every mirror
+/// taking its relocated branch crashed the game (int3 inside it).
 /// </summary>
 [Feature("MirrorRepair")]
 [HarmonyPatch]
@@ -24,12 +26,37 @@ internal static class MirrorRepair
     private const int BurstFrames = 120;
     private static int nextScan, burstUntil, sceneSignature;
     private static readonly HashSet<IntPtr> swapped = new();
+    private static readonly List<(Transform hidden, List<Transform> shown)> changes = new();
 
     /// <summary>
     /// Rooms stream in as scenes; right after one loads every frame is scanned so the swap lands during the room
     /// transition instead of in view. Otherwise a slow scan catches mirrors switched by story events.
     /// </summary>
-    internal static void Init() => ActionTracker.Updated += (e, _) =>
+    internal static void Init()
+    {
+        ActionTracker.Updated += (e, _) => Update();
+        Settings.OnChanged(() => { if (!Active) RestoreAll(); }, Settings.Enabled, Settings.RepairMirrors);
+    }
+
+    /// <summary>Swaps live in the loaded scenes, so turning the fix off has to undo them in place.</summary>
+    private static void RestoreAll()
+    {
+        try
+        {
+            foreach (var (hidden, shown) in changes)
+            {
+                foreach (var t in shown)
+                    if (t != null) t.gameObject.SetActive(false);
+                if (hidden != null) hidden.gameObject.SetActive(true);
+            }
+            if (changes.Count > 0) Log.Debug($"MirrorRepair: {changes.Count} mirror swap(s) undone");
+        }
+        catch (Exception ex) { Fix.Fail(ex); }
+        changes.Clear();
+        swapped.Clear();
+    }
+
+    private static void Update()
     {
         if (!Active) return;
         try
@@ -45,7 +72,7 @@ internal static class MirrorRepair
             SwapBrokenMirrors();
         }
         catch (Exception ex) { Fix.Fail(ex); }
-    };
+    }
 
     private static int SceneSignature()
     {
@@ -61,8 +88,20 @@ internal static class MirrorRepair
     private static bool IsBroken(GPE_Mirror m) => ConditionKey(m)?.Contains("Broken", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
+    /// Only save room mirrors are repaired. The Hall of Mirrors hub keeps several destination mirrors, some broken by
+    /// design, in groups under one parent; swapping across those groups froze the game when the player came near.
+    /// </summary>
+    private static bool InSavePoint(GPE_Mirror m)
+    {
+        for (var t = m.transform; t != null; t = t.parent)
+            if (t.name.Contains("SavePoint", StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    /// <summary>
     /// After The Hermit, save rooms show a broken mirror (condition key ...BrokenMirror) while the original mirror
-    /// stays in the scene, inactive. The branches holding them below their common ancestor are swapped back.
+    /// stays in the scene, inactive. The branches holding them below their common ancestor are swapped back, but only
+    /// when that ancestor holds no other mirror.
     /// </summary>
     private static void SwapBrokenMirrors()
     {
@@ -75,34 +114,51 @@ internal static class MirrorRepair
         foreach (var broken in mirrors)
         {
             if (!broken.gameObject.activeInHierarchy || swapped.Contains(broken.Pointer) || !IsBroken(broken)) continue;
-            var scene = broken.gameObject.scene.handle;
-            var intact = mirrors.FirstOrDefault(m => m.gameObject.scene.handle == scene && !m.gameObject.activeInHierarchy && !IsBroken(m));
-            if (intact == null) continue;
             swapped.Add(broken.Pointer);
-
-            var (brokenBranch, intactBranch) = Branches(broken.transform, intact.transform);
-            if (brokenBranch.Pointer == intactBranch.Pointer)
+            if (!InSavePoint(broken))
             {
-                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: mirrors share a branch, not swapped");
+                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: '{Path(broken.transform)}' is not a save room mirror, left alone");
                 continue;
             }
+            var scene = broken.gameObject.scene.handle;
+            GPE_Mirror? intact = null;
+            Transform? brokenBranch = null, intactBranch = null;
+            foreach (var m in mirrors)
+            {
+                if (m.gameObject.scene.handle != scene || m.gameObject.activeInHierarchy || IsBroken(m)) continue;
+                var (b, i, common) = Branches(broken.transform, m.transform);
+                if (common == null || b.Pointer == i.Pointer || common.GetComponentsInChildren<GPE_Mirror>(true).Length != 2) continue;
+                (intact, brokenBranch, intactBranch) = (m, b, i);
+                break;
+            }
+            if (intact == null || brokenBranch == null || intactBranch == null)
+            {
+                Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: no intact mirror paired with '{Path(broken.transform)}', not swapped");
+                continue;
+            }
+            var shown = new List<Transform>();
             for (var t = intact.transform; t != null && t != intactBranch.parent; t = t.parent)
-                if (!t.gameObject.activeSelf) t.gameObject.SetActive(true);
+            {
+                if (t.gameObject.activeSelf) continue;
+                t.gameObject.SetActive(true);
+                shown.Add(t);
+            }
             brokenBranch.gameObject.SetActive(false);
+            changes.Add((brokenBranch, shown));
             Log.Debug($"MirrorRepair: {broken.gameObject.scene.name}: hid '{Path(brokenBranch)}' ({ConditionKey(broken)}), " +
                       $"restored '{Path(intactBranch)}' ({ConditionKey(intact)})");
         }
     }
 
-    /// <summary>The children of the lowest common ancestor that lead to each transform (roots if none).</summary>
-    private static (Transform a, Transform b) Branches(Transform a, Transform b)
+    /// <summary>The lowest common ancestor and its children that lead to each transform (roots if none).</summary>
+    private static (Transform a, Transform b, Transform? common) Branches(Transform a, Transform b)
     {
         var ancestors = new HashSet<IntPtr>();
         for (var t = a; t != null; t = t.parent) ancestors.Add(t.Pointer);
         Transform? common = null;
         for (var t = b; t != null; t = t.parent)
             if (ancestors.Contains(t.Pointer)) { common = t; break; }
-        return (ChildToward(common, a), ChildToward(common, b));
+        return (ChildToward(common, a), ChildToward(common, b), common);
     }
 
     private static Transform ChildToward(Transform? ancestor, Transform t)
@@ -122,20 +178,6 @@ internal static class MirrorRepair
             if (reported.Add(__instance.Pointer))
                 Log.Debug($"MirrorRepair: fast travel lock '{__instance.deathTrapProgressionKey?.name}' ignored");
             __result = false;
-        }
-        catch (Exception ex) { Fix.Fail(ex); }
-    }
-
-    [HarmonyPatch(typeof(GPE_Mirror), nameof(GPE_Mirror.CanUseMirror)), HarmonyPostfix]
-    private static void CanUseMirror(GPE_Mirror __instance, Entity mc, ref bool __result)
-    {
-        if (__result || !Active) return;
-        try
-        {
-            if (__instance.mirrorType != MirrorType.BaseMirror || !IsBroken(__instance)) return;
-            if (reported.Add(__instance.Pointer))
-                Log.Debug($"MirrorRepair: mirror {__instance.name} ({__instance.gameObject.scene.name}) repaired, condition={__instance.useMirrorCondition?.GetIl2CppType().Name}");
-            __result = true;
         }
         catch (Exception ex) { Fix.Fail(ex); }
     }

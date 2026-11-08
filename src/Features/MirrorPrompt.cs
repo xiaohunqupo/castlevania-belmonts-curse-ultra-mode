@@ -29,6 +29,8 @@ internal static class MirrorPrompt
     private static readonly List<(GPE_Mirror mirror, Transform point, float radius)> mirrors = new();
     private static readonly List<Prompt> prompts = new();
     private static readonly HashSet<IntPtr> reported = new();
+    /// <summary>Mirrors whose own check threw; one failing mirror must not turn the prompt off everywhere.</summary>
+    private static readonly HashSet<IntPtr> failing = new();
     private static readonly Dictionary<IntPtr, string?> downTags = new();
     private static int nextScan;
     private static bool wasNear;
@@ -172,10 +174,21 @@ internal static class MirrorPrompt
         foreach (var (mirror, point, radius) in mirrors)
         {
             if (point == null || point.WasCollected || !point.gameObject.activeInHierarchy || Vector3.Distance(point.position, position) > radius) continue;
-            if (mirror != null && !mirror.WasCollected && mirror.IsATeleportMirror && mirror.CanUseMirror(e)) return true;
+            if (mirror == null || mirror.WasCollected || failing.Contains(mirror.Pointer)) continue;
+            try
+            {
+                if (mirror.IsATeleportMirror && mirror.CanUseMirror(e)) return true;
+            }
+            catch (Exception ex)
+            {
+                failing.Add(mirror.Pointer);
+                Log.Debug($"MirrorPrompt: {Path(mirror.transform)} can't be checked, skipped: {ex.Message}");
+            }
         }
         return false;
     }
+
+    private static string Path(Transform t) => t.parent == null ? $"{t.gameObject.scene.name}:{t.name}" : $"{Path(t.parent)}/{t.name}";
 
     private static void ScanPrompts()
     {
