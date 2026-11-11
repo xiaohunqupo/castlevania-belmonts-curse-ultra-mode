@@ -12,8 +12,8 @@ namespace UltraMode.Features;
 /// Charm effects, drawbacks included, are applied exactly as the game defines them.
 /// ForceRevealSecret makes the game's equipped checks report the Gloomstone even when it isn't owned; the
 /// charm has no affect, the hidden-wall reveal only asks whether it is equipped.
-/// The charms menu and the inventory's own equip calls see the real slots, otherwise every owned charm looks
-/// equipped and can't be put into a slot.
+/// The charms menu and the inventory's own equip calls see the real slots for HasCharmEquipped (so a click still
+/// means "put into a slot"), while the equipped frame on inventory tiles is lit separately for passives.
 /// </summary>
 [Feature("PassiveCharms")]
 [HarmonyPatch]
@@ -170,6 +170,32 @@ internal static class PassiveCharms
 
     [HarmonyPatch(typeof(InventoryCharmsMenuManager), nameof(InventoryCharmsMenuManager.OnOpened)), HarmonyPostfix]
     private static void MenuOpened(InventoryCharmsMenuManager __instance) => charmsMenu = __instance;
+
+    /// <summary>
+    /// HasCharmEquipped stays false for passives while the menu is open (so clicks still equip into a slot).
+    /// Light the same equipped frame the game uses for slotted charms.
+    /// </summary>
+    [HarmonyPatch(typeof(InventoryItemSlotController<CharmItemData>), nameof(InventoryItemSlotController<CharmItemData>.SetUpSlot))]
+    [HarmonyPostfix]
+    private static void SetUpPassiveEquippedFrame(InventoryItemSlotController<CharmItemData> __instance, Inventory inventory, CharmItemData item) =>
+        ShowPassiveEquippedFrame(__instance, inventory, item);
+
+    [HarmonyPatch(typeof(InventoryItemSlotController<CharmItemData>), nameof(InventoryItemSlotController<CharmItemData>.RefreshSlot))]
+    [HarmonyPostfix]
+    private static void RefreshPassiveEquippedFrame(InventoryItemSlotController<CharmItemData> __instance) =>
+        ShowPassiveEquippedFrame(__instance, __instance._inventory, __instance.GetItem());
+
+    private static void ShowPassiveEquippedFrame(InventoryItemSlotController<CharmItemData>? slot, Inventory? inventory, CharmItemData? item)
+    {
+        if (!Active || slot == null || inventory == null || item == null) return;
+        try
+        {
+            if (!applied.Contains((inventory.Pointer, item.Pointer))) return;
+            var display = slot.equippedDisplay;
+            if (display != null) display.SetBool(true);
+        }
+        catch (Exception ex) { Fix.Fail(ex); }
+    }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.EquipCharmFromInventory), typeof(CharmItemData), typeof(int)), HarmonyPrefix]
     private static void EquipBegin() => slotQueries++;

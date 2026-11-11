@@ -68,9 +68,13 @@ internal static class Settings
     internal static ConfigEntry<bool> DumpKeyEnabled = null!;
     internal static ConfigEntry<KeyboardShortcut> DumpKey = null!;
 
+    /// <summary>Set during Load when BepInEx Config Manager is present; patches are skipped for the session.</summary>
+    internal static bool ConfigManagerConflict;
+
     internal static void Bind(ConfigFile cfg)
     {
-        Enabled = cfg.Bind("00 General", "Enabled", true, "总开关：奥创模式。关闭后所有补丁都回到原版行为。");
+        Enabled = cfg.Bind("00 General", "Enabled", true,
+            "总开关：奥创模式。关闭后所有补丁都回到原版行为。与 BepInEx Config Manager 冲突：同时安装时本开关会强制关闭并跳过补丁，请卸掉 Config Manager 后重启再开。");
         ToggleKeyEnabled = cfg.Bind("00 General", "ToggleKeyEnabled", true, "启用切换奥创模式的快捷键（ToggleKey）。和其他 mod 的快捷键冲突时关闭，或者改 ToggleKey。");
         ToggleKey = cfg.Bind("00 General", "ToggleKey", new KeyboardShortcut(KeyCode.F10), "游戏内切换奥创模式的按键。");
 

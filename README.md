@@ -141,6 +141,7 @@ Default combos (gamepad):
 
 ## Compatibility
 
+- **BepInEx Config Manager** conflicts with this mod (both installed at once crashes on startup). When it is detected, Ultra Mode turns itself off, skips all patches, and the Enable option hint explains the conflict. Remove Config Manager and restart to use Ultra Mode again.
 - **Charms Unlimited** conflicts with passive relics. Use only one of them (turn off `PassiveCharms` and `PassiveDrawbackCharms`, or don't install Charms Unlimited).
 - **Belmont Minimap / Belmont UI** work alongside; the settings page moves to their MODS tab, see above.
 - After a game update, a module whose target methods changed falls back to vanilla on its own, and the log says why.

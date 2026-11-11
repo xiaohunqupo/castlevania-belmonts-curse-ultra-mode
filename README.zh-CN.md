@@ -139,6 +139,7 @@
 
 ## 兼容性
 
+- **BepInEx Config Manager**：与本 mod 冲突（同时安装时会在启动阶段崩溃）。检测到后会自动关闭「启用奥创模式」、跳过全部补丁，并在该选项说明里提示冲突。请卸掉 Config Manager 后重启，才能再开启奥创模式。
 - **Charms Unlimited**：和被动魔导器冲突，请只启用其中一个（关闭 `PassiveCharms` 和 `PassiveDrawbackCharms`，或者不装 Charms Unlimited）。
 - **Belmont Minimap / Belmont UI**：可以一起使用，设置页会自动放到它们的 MODS 页签上，见上文。
 - 游戏更新后，如果某个补丁的目标方法变了，只有对应的模块会退回原版，日志里会写明原因。

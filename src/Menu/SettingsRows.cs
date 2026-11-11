@@ -23,7 +23,13 @@ internal static class SettingsRows
     /// <summary>In page order. A config entry left out of this list can only be changed in the cfg file.</summary>
     internal static SettingsRow[] All() => new SettingsRow[]
     {
-        Toggle(Settings.Enabled, "启用奥创模式", "Enable Ultra Mode", "关闭后全部恢复原版（也可按 F10 切换）", "Off restores vanilla behaviour (F10 toggles too)"),
+        Toggle(Settings.Enabled, "启用奥创模式", "Enable Ultra Mode",
+            Settings.ConfigManagerConflict
+                ? "已检测到 BepInEx Config Manager, 与本 mod 冲突并已自动关闭. 请卸掉该 mod 后重启再开"
+                : "关闭后全部恢复原版(也可按 F10 切换)",
+            Settings.ConfigManagerConflict
+                ? "BepInEx Config Manager is installed and conflicts with this mod. Ultra Mode was turned off. Remove Config Manager and restart to enable it."
+                : "Off restores vanilla behaviour (F10 toggles too)"),
         Toggle(Settings.ToggleKeyEnabled, "快捷键开关奥创模式", "Toggle hotkey", "默认 F10，与其他 mod 冲突时关闭", "F10 by default; turn off if another mod uses it"),
 
         Slider(Settings.MoveSpeed, 0.5f, 3f, 0.05f, "移动速度", "Move speed", "1.00x 为原版", "1.00x is vanilla"),
@@ -39,7 +45,8 @@ internal static class SettingsRows
         Toggle(Settings.InstantMirror, "镜子即按即进", "Instant mirror entry", "镜子前按下不需要按住", "No need to hold down at a mirror"),
         Toggle(Settings.MirrorPrompt, "镜子提示下传送", "Mirror teleport prompt", "镜子前提示 保存/信息 和 下 传送", "Shows Save/Info and Down Teleport at mirrors"),
 
-        Toggle(Settings.WhipSkipEmpty, "没有可钩目标时禁用钩锁", "Block whip with nothing to hook", "默认关；打开后附近钩不到东西时按钩锁不出钩、不打断动作", "Off by default; when on, whip does nothing if nothing is in reach"),
+        // Hint must stay within the game's font; Minimap skips the whole row if any glyph is missing (e.g. fullwidth ';').
+        Toggle(Settings.WhipSkipEmpty, "没有可钩目标时禁用钩锁", "Block whip with nothing to hook", "没有可钩的东西时按钩锁不打断动作", "When on, pressing whip with nothing to hook does nothing"),
         Toggle(Settings.WhipAutoAim, "钩锁自动瞄准", "Whip auto-aim", "只有一个高亮目标时不管朝向都能钩中", "A lone highlighted target is hooked whatever you face"),
         Toggle(Settings.WhipHighlightReachable, "只高亮钩得到的目标", "Highlight reachable only", "被墙挡住或超出范围时不高亮", "No highlight when blocked or out of range"),
 

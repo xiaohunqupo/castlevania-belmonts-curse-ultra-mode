@@ -136,6 +136,7 @@
   - `InventoryCharmsMenuManager.OnOpened` 后置：记下魔导器菜单。
   - `Inventory.EquipCharmFromInventory` / `CanEquipCharm` / `UnequipCharm` 前置 + Finalizer：`slotQueries` 计数。
 - **为什么要 `slotQueries` 和 `MenuOpen`**：魔导器菜单用 `HasCharmEquipped` 判断点击是"装上"还是"卸下"。如果被动魔导器一律报告为已装备，玩家就再也装不进槽位。所以菜单打开时、以及背包自己的装备逻辑运行时，`HasCharmEquipped` 返回原版结果。
+- **装备框**：菜单打开时 `HasCharmEquipped` 仍为原版，但 `InventoryItemSlotController.SetUpSlot` / `RefreshSlot` 后置会给已被动生效的魔导器点亮 `equippedDisplay`，与槽位里装备的框一致；点击仍是往槽位装备。
 - 负面魔导器列表：`DrawbackCharms`（资源名）。新增负面魔导器时，同时更新 `Settings.cs` 的默认值和说明、`SettingsRows.cs` 的提示文字、两份 README 的魔导器表。
 - 配置：`05 Charms`。
 - 与 Charms Unlimited 冲突（两者都改装备逻辑）。
