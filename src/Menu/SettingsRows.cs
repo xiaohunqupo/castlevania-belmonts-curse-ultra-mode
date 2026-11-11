@@ -39,7 +39,7 @@ internal static class SettingsRows
         Toggle(Settings.InstantMirror, "镜子即按即进", "Instant mirror entry", "镜子前按下不需要按住", "No need to hold down at a mirror"),
         Toggle(Settings.MirrorPrompt, "镜子提示下传送", "Mirror teleport prompt", "镜子前提示 保存/信息 和 下 传送", "Shows Save/Info and Down Teleport at mirrors"),
 
-        Toggle(Settings.WhipSkipEmpty, "无目标时不出钩锁", "No empty whip", "没有可钩的东西时按钩锁不打断动作", "Pressing whip with nothing to hook does nothing"),
+        Toggle(Settings.WhipSkipEmpty, "没有可钩目标时禁用钩锁", "Block whip with nothing to hook", "默认关；打开后附近钩不到东西时按钩锁不出钩、不打断动作", "Off by default; when on, whip does nothing if nothing is in reach"),
         Toggle(Settings.WhipAutoAim, "钩锁自动瞄准", "Whip auto-aim", "只有一个高亮目标时不管朝向都能钩中", "A lone highlighted target is hooked whatever you face"),
         Toggle(Settings.WhipHighlightReachable, "只高亮钩得到的目标", "Highlight reachable only", "被墙挡住或超出范围时不高亮", "No highlight when blocked or out of range"),
 
@@ -47,6 +47,8 @@ internal static class SettingsRows
         Toggle(Settings.TechRecovery, "击飞后按跳受身", "Jump to recover from knockback", "立即恢复正常状态并闪光", "Instantly regain control with a flash"),
 
         Toggle(Settings.AttackParry, "攻击也能弹反", "Attacks can parry", "获得弹反魔导器后生效，范围与窗口同原版弹反", "Needs the parry relic; same window and area as parry"),
+        Toggle(Settings.LevelUpRefill, "升级时回满 HP 和 MP", "Refill on level up", "获得经验升级时 HP、MP 全部恢复", "Leveling up restores all HP and MP"),
+        Toggle(Settings.StatueLevelUp, "经验雕像保证升级", "Statues always level up", "击碎经验雕像后经验不够时补足一级", "A broken experience statue tops up to the next level"),
 
         Toggle(Settings.RepairMirrors, "修复破碎镜子", "Repair broken mirrors", "隐士任务后损坏的传送镜子恢复可用", "Teleport mirrors broken after The Hermit work again"),
 
@@ -62,6 +64,7 @@ internal static class SettingsRows
     {
         foreach (var entry in Plugin.Instance.Config.Values) entry.BoxedValue = entry.DefaultValue;
     }
+
 
     private static SettingsRow Toggle(ConfigEntry<bool> entry, string labelZh, string labelEn, string hintZh, string hintEn) =>
         new(entry, labelZh, labelEn, hintZh, hintEn);

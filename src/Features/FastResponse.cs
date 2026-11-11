@@ -13,15 +13,29 @@ namespace UltraMode.Features;
 /// </summary>
 internal static class FrameScaler
 {
-    /// <summary>Int fields named like frames that are durations or ids, not positions on the action's timeline.</summary>
-    private static readonly string[] excluded = { "hitstop", "invulnerab", "slowmo", "version", "recoverinvul" };
+    /// <summary>
+    /// Names that look like frames but are durations, lengths or ids. Also skips <c>*Length</c> / <c>*Duration</c>
+    /// (except fade in/out blends). Charge thresholds and hurtbox windows live in arrays/value types and must still
+    /// be collected — see <see cref="CollectCollection"/>.
+    /// </summary>
+    private static readonly string[] excluded = { "hitstop", "invulnerab", "slowmo", "version", "recoverinvul", "length", "duration", "framedelay", "framebuffer" };
 
     internal sealed class FrameField
     {
-        internal readonly Il2CppObjectBase Target;
+        internal readonly Il2CppObjectBase? Target;
         internal readonly PropertyInfo Prop;
         internal readonly int Original;
-        internal FrameField(Il2CppObjectBase target, PropertyInfo prop, int original) { Target = target; Prop = prop; Original = original; }
+        /// <summary>Il2Cpp value types in arrays must be written back through the indexer; <see cref="Prop"/> alone only mutates a boxed copy.</summary>
+        internal readonly Action<int>? Write;
+        internal FrameField(Il2CppObjectBase? target, PropertyInfo prop, int original, Action<int>? write = null)
+        {
+            Target = target; Prop = prop; Original = original; Write = write;
+        }
+        internal void Set(int value)
+        {
+            if (Write != null) Write(value);
+            else if (Target != null) Prop.SetValue(Target, value);
+        }
     }
 
     private sealed class Plan
@@ -62,6 +76,14 @@ internal static class FrameScaler
         Log.Debug($"FrameScaler: {data.name} fields={plan.Fields.Count} end={plan.OriginalEnd} firstHit={plan.FirstHit}");
     }
 
+    private static bool ShouldScale(string lower) =>
+        lower is "fadeinduration" or "fadeoutduration" or "endframe"
+        || (lower.Contains("frame") && !excluded.Any(lower.Contains));
+
+    /// <summary>Offsets stored relative to the first hit (not absolute timeline positions).</summary>
+    private static bool IsRelativeOffset(string lower) =>
+        lower.Contains("afterfirsthit") || lower is "lockafterfirsthitframe" or "lockbeforefirsthitframe";
+
     private static void Collect(Plan plan, Il2CppObjectBase target, int depth)
     {
         if (!claimed.Add(target.Pointer)) return;
@@ -70,25 +92,81 @@ internal static class FrameScaler
         {
             if (!p.CanRead || p.GetIndexParameters().Length != 0) continue;
             var lower = p.Name.ToLowerInvariant();
-            if (p.PropertyType == typeof(int) && p.CanWrite && (lower.Contains("frame") || lower is "endframe" or "fadeinduration" or "fadeoutduration"))
+            if (p.PropertyType == typeof(int) && p.CanWrite && ShouldScale(lower))
             {
-                if (excluded.Any(lower.Contains)) continue;
                 try { plan.Fields.Add(new FrameField(obj, p, (int)p.GetValue(obj)!)); } catch { }
             }
-            else if (depth > 0 && p.PropertyType.Name.StartsWith("List`1"))
+            else if (depth > 0 && IsCollection(p.PropertyType))
             {
                 try
                 {
-                    if (p.GetValue(obj) is not Il2CppObjectBase list) continue;
-                    var count = (int)list.GetType().GetProperty("Count")!.GetValue(list)!;
-                    var item = list.GetType().GetProperty("Item")!;
-                    for (var i = 0; i < count; i++)
-                        if (item.GetValue(list, new object[] { i }) is Il2CppObjectBase element and not UnityEngine.Object and not Il2CppSystem.ValueType)
-                            Collect(plan, element, depth - 1);
+                    if (p.GetValue(obj) is Il2CppObjectBase collection)
+                        CollectCollection(plan, collection, depth - 1);
                 }
                 catch { }
             }
         }
+    }
+
+    private static bool IsCollection(Type type)
+    {
+        var name = type.Name;
+        return name.StartsWith("List`1", StringComparison.Ordinal)
+            || name.StartsWith("Il2CppReferenceArray`1", StringComparison.Ordinal)
+            || name.StartsWith("Il2CppStructArray`1", StringComparison.Ordinal);
+    }
+
+    private static void CollectCollection(Plan plan, Il2CppObjectBase collection, int depth)
+    {
+        if (!TryGetIndexer(collection, out var item, out var count)) return;
+        for (var i = 0; i < count; i++)
+        {
+            object? raw;
+            try { raw = item.GetValue(collection, new object[] { i }); } catch { continue; }
+            if (raw == null) continue;
+
+            if (raw is Il2CppObjectBase element and not UnityEngine.Object and not Il2CppSystem.ValueType)
+            {
+                Collect(plan, element, depth);
+                continue;
+            }
+
+            // ChargeStep and similar: int frame fields on a value type stored in an array.
+            if (raw is not Il2CppSystem.ValueType && !raw.GetType().IsValueType) continue;
+            CollectValueTypeElement(plan, collection, item, i, raw);
+        }
+    }
+
+    private static void CollectValueTypeElement(Plan plan, Il2CppObjectBase collection, PropertyInfo item, int index, object boxed)
+    {
+        foreach (var p in boxed.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!p.CanRead || !p.CanWrite || p.PropertyType != typeof(int) || p.GetIndexParameters().Length != 0) continue;
+            var lower = p.Name.ToLowerInvariant();
+            if (!ShouldScale(lower)) continue;
+            int original;
+            try { original = (int)p.GetValue(boxed)!; } catch { continue; }
+            var i = index;
+            var prop = p;
+            plan.Fields.Add(new FrameField(null, prop, original, value =>
+            {
+                var current = item.GetValue(collection, new object[] { i });
+                if (current == null) return;
+                prop.SetValue(current, value);
+                item.SetValue(collection, current, new object[] { i });
+            }));
+        }
+    }
+
+    private static bool TryGetIndexer(Il2CppObjectBase collection, out PropertyInfo item, out int count)
+    {
+        var type = collection.GetType();
+        item = type.GetProperty("Item")!;
+        if (item == null) { count = 0; return false; }
+        if (type.GetProperty("Count")?.GetValue(collection) is int c) { count = c; return true; }
+        if (type.GetProperty("Length")?.GetValue(collection) is int l) { count = l; return true; }
+        count = 0;
+        return false;
     }
 
     private static int Map(Plan plan, int frame, float windup, float recovery)
@@ -99,14 +177,39 @@ internal static class FrameScaler
         return Math.Max(1, Mathf.RoundToInt(mapped));
     }
 
+    private static int MapField(Plan plan, FrameField field, float windup, float recovery)
+    {
+        if (field.Original <= 0) return field.Original;
+        var lower = field.Prop.Name.ToLowerInvariant();
+        if (IsRelativeOffset(lower))
+        {
+            var speed = lower.Contains("before") ? windup : recovery;
+            return Math.Max(0, Mathf.RoundToInt(field.Original / speed));
+        }
+        return Map(plan, field.Original, windup, recovery);
+    }
+
     private static void Apply(Plan plan)
     {
         var (w, r) = Settings.On ? plan.Speeds() : (1f, 1f);
-        foreach (var f in plan.Fields)
+        var mapped = new int[plan.Fields.Count];
+        for (var i = 0; i < plan.Fields.Count; i++)
         {
-            var frame = Settings.On && f.Original > 0 && plan.Pinned?.Invoke(f) is { } pin ? pin : Map(plan, f.Original, w, r);
-            try { f.Prop.SetValue(f.Target, frame); } catch { }
+            var f = plan.Fields[i];
+            mapped[i] = Settings.On && f.Original > 0 && plan.Pinned?.Invoke(f) is { } pin
+                ? pin
+                : MapField(plan, f, w, r);
         }
+
+        // Rounding can collapse a 1–2 frame hurtbox window to start==end; keep at least one active frame.
+        if (Settings.On)
+            PreserveWindows(plan, mapped, Math.Max(w, r));
+
+        for (var i = 0; i < plan.Fields.Count; i++)
+        {
+            try { plan.Fields[i].Set(mapped[i]); } catch { }
+        }
+
         if (plan.Data.scaleMode != ActionData.ScaleMode.EndFrame && plan.OriginalEnd > 0)
         {
             var newEnd = Map(plan, plan.OriginalEnd, w, r);
@@ -115,6 +218,38 @@ internal static class FrameScaler
         else if (plan.ScaleOpenEnded && plan.OriginalEnd <= 0)
             plan.Data.animTimeScale = plan.OriginalTimeScale * w;
     }
+
+    private static void PreserveWindows(Plan plan, int[] mapped, float speed)
+    {
+        for (var i = 0; i < plan.Fields.Count; i++)
+        {
+            var end = plan.Fields[i];
+            var endName = end.Prop.Name;
+            if (endName is not ("endFrame" or "stopFrame" or "activationStopFrame" or "projectileEndFrame")) continue;
+            if (end.Target == null) continue;
+            for (var j = 0; j < plan.Fields.Count; j++)
+            {
+                var start = plan.Fields[j];
+                if (start.Target?.Pointer != end.Target.Pointer) continue;
+                var startName = start.Prop.Name;
+                if (startName is not ("startFrame" or "activationStartFrame" or "projectileStartFrame")) continue;
+                if (!NamesPair(startName, endName)) continue;
+                if (start.Original >= end.Original) continue;
+                if (mapped[i] > mapped[j]) continue;
+                var minSpan = Math.Max(1, Mathf.RoundToInt((end.Original - start.Original) / speed));
+                mapped[i] = mapped[j] + minSpan;
+            }
+        }
+    }
+
+    private static bool NamesPair(string start, string end) => (start, end) switch
+    {
+        ("startFrame", "endFrame") => true,
+        ("startFrame", "stopFrame") => true,
+        ("activationStartFrame", "activationStopFrame") => true,
+        ("projectileStartFrame", "projectileEndFrame") => true,
+        _ => false,
+    };
 
     internal static void ReapplyAll()
     {

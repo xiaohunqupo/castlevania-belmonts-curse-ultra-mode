@@ -80,8 +80,12 @@ internal sealed class UltraModeBehaviour : MonoBehaviour
     private void Update()
     {
         Menu.ScrollFollow.Update();
+        Menu.SettingsPage.Update();
         try
         {
+            Features.TarotShortcuts.PollInput();
+            Features.QuickEquip.PollInput();
+            Features.TarotHint.Tick();
             if (Settings.DumpKeyEnabled.Value && Settings.DumpKey.Value.IsDown()) Inspector.DumpAll();
             if (!Settings.ToggleKeyEnabled.Value || !Settings.ToggleKey.Value.IsDown()) return;
             Settings.Enabled.Value = !Settings.Enabled.Value;

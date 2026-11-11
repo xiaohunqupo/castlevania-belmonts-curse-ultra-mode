@@ -18,8 +18,11 @@
 `src/Features/FastResponse.cs`。加快移动、攻击、钩锁、转身急停和镜子相关动作。
 
 - 挂在：`ActionTracker.Started`（遇到新动作时注册缩放）、`ActionTracker.Updated`（扫描镜子动作、转身反应、调整移动参数）。无 Harmony 补丁。
-- **FrameScaler**：通过反射找出 `ActionData`、其 `WeaponActionData` 子类以及所有 Feature（含一层嵌套列表）上名字含 `frame` 的 int 字段，从原值重新映射。第一次命中帧（`firstHitFrame`）之前用前摇倍率，之后用后摇倍率；同时按结束帧缩短的比例调高 `animTimeScale`，让动画和命中帧对齐。
-  - `excluded` 里的字段（硬直、无敌时长、慢动作、版本号）不缩放。新发现有字段不该缩放时加到这里。
+- **FrameScaler**：通过反射找出 `ActionData`、其 `WeaponActionData` 子类以及所有 Feature 上名字含 `frame` 的 int 字段，从原值重新映射。第一次命中帧（`firstHitFrame`）之前用前摇倍率，之后用后摇倍率；同时按结束帧缩短的比例调高 `animTimeScale`，让动画和命中帧对齐。
+  - 嵌套收集：`List`1`、`Il2CppReferenceArray`1`、`Il2CppStructArray`1` 都会走进一层。命中框（`TimedHurtbox` / `SimplifiedHurtbox`）和蓄力台阶（`ChargeStep.minChargeFrame`，值类型，写回数组槽位）必须一起缩放；以前只走 `List` 且跳过值类型，会造成位移/取消帧压缩了、判定和松手阈值仍是原版，表现为点按不出招、连点卡顿、推开敌人却无伤。
+  - `*AfterFirstHit` / `lockBeforeFirstHitFrame` / `lockAfterFirstHitFrame` 按相对偏移缩放，不用绝对时间轴映射。
+  - 圆整后若 `startFrame`/`endFrame`（及 activation、projectile 成对字段）塌成同一帧，会保底留出至少一帧有效窗口。
+  - `excluded`：硬直、无敌、慢动作、版本号，以及 `*Length` / `*Duration`（淡入淡出混合除外）。新发现有字段不该缩放时加到这里。
   - `claimed`：多个动作共用的 Feature 对象只缩放一次。
   - `pinned`：个别字段固定为某个值而不是按比例缩放（即按即进镜子用）。
 - **哪些动作会被缩放**：攻击（`WeaponActionData`）、名字以 `MC_Whip` 开头且有结束帧的动作、主角移动 Feature（`McMovementFeature`）上的转身/加速/减速/靠墙反应、`MC_Crouch` / `MC_Crouch_Start`、镜子动作（名字含 `MirrorInteract` 或以 `GPE_MirrorBase_` 开头）。
@@ -86,16 +89,17 @@
 
 ## WhipAssist
 
-`src/Features/WhipAssist.cs`。钩锁辅助：无目标不出钩、自动瞄准、只高亮钩得到的锚点。
+`src/Features/WhipAssist.cs`。钩锁辅助：自动瞄准、只高亮钩得到的锚点；可选无目标不出钩（默认关）。
 
 - 锚点高亮由 `DistanceReactionSystem` 根据距离调用 `WhipDistanceComponent.AddFeedback` / `RemoveFeedback`，不考虑墙壁遮挡。本模块对每个高亮锚点用游戏自己的目标搜索 `WhipHookDetect.FindEntityTarget` 朝它探测一次（`Probe`，探测前后保存并恢复钩锁状态），结果用于三件事。
 - 补丁：
   - `WhipDistanceComponent.AddFeedback` / `RemoveFeedback` 前置：钩不到的锚点不亮。
-  - `WhipHookDetect.CanStart` 前置：原方向有目标 → 原版；否则只有一个可达锚点 → 自动瞄准；都没有 → 不出钩。
+  - `WhipHookDetect.CanStart` 前置：原方向有目标 → 原版；否则只有一个可达锚点 → 自动瞄准；都没有时若 `SkipEmpty` 打开则不出钩，默认关闭则交给原版（仍可挥空）。
   - `WhipHookDetect.GetAimDirection` 后置：探测时和自动瞄准时改写方向。
   - `WhipHookDetect.OnStart` / `OnStop` 后置：钩锁进行中冻结可达性计算。
-- 锚点每 60 帧扫描一次场景。
-- 配置：`06 Whip`。
+- 锚点每 60 帧扫描一次场景；每个高亮锚点每帧用 `FindEntityTarget` 探测可达性（房间里勾点多时有开销，和 Nexus 上某房间掉帧的报告可能有关，尚未单独优化）。
+- 平时的可达性用某个 `MC_` 钩锁动作上的 `WhipHookDetect` 探测；按下钩锁时（`CanStart`）改用这次真正要发出的那个 `WhipHookDetect` 重新算一遍。空中、爬墙后的钩锁和地面的不是同一个动作，射程和起点不同，用地面的参数判断会把能钩到的点算成"没有"，导致按了不出钩。
+- 配置：`06 Whip`。`SkipEmpty` 默认 `false`（已有配置文件的玩家仍保留文件里的值）。
 
 ## MirrorRepair
 
@@ -135,3 +139,62 @@
 - 负面魔导器列表：`DrawbackCharms`（资源名）。新增负面魔导器时，同时更新 `Settings.cs` 的默认值和说明、`SettingsRows.cs` 的提示文字、两份 README 的魔导器表。
 - 配置：`05 Charms`。
 - 与 Charms Unlimited 冲突（两者都改装备逻辑）。
+
+## TarotShortcuts（含 TarotHint）
+
+`src/Features/TarotShortcuts.cs`、`src/Features/TarotHint.cs`。组合键直接释放已获得的塔罗牌法术，不切换装备。
+
+- Y 走的是 `UseItem`（`itemType == Spell`）这个 `ActionTrigger`，`GetActionData` 按当前装备的法术的 `attackBindings` 给出动作。本模块在它后置里把结果换成目标法术的动作（同一个 `bindingType` 的绑定，没有就用第一个），所以不需要重新装备。
+- 选哪张牌（`Pick`）：R3 发起时强制指定 → 正在释放的替换法术（保证"准备"和"释放"两段是同一张牌）→ 按 Y 时按住 LT → 按 Y 时按住 RB（再看上/下）→ 上/下。LT、RB 都在按下 Y 的那一帧记录（`PollInput`，30 帧内有效），因为法术可能在几帧后才开始。
+- 消耗：`SpellManaCostFeature.GetEquippedSpell` / `SpellHealthCostFeature.GetEquippedSpell` 后置，在替换法术开始前后返回目标法术，扣的是那张牌自己的 MP/HP。
+- 释放中的判断：`ActionTracker.Started` 看到替换出来的动作时记下 `casting` 和它的名字前缀（第一个 `_` 之前），之后没有同前缀的动作在运行就算结束。
+- R3 / RB+R3：`PollInput` 记下 R3 按下，`Update` 里用 `Actor.TryStartAction` 启动最近用过的法术 `UseItem`（`forced` 指定法术）。
+- 按住型法术（赦免、灵魂收割等）：动作上的 `InputConditionFeature` 检查 `Player_Spell_InputState`，松开就停。R3 发起的法术进行中，`IsOtherInputOk` / `IsConditionValid` 后置在 R3 按住时返回 `true`。
+- LT+Y：LT 先开始弹反，游戏会把 Y 缓冲到弹反可以衔接时才处理。按 Y 时如果 `CheckStartAction` 只是因为 `ChainableIssue` 不能开始、且动作的所有 Feature 的 `CanStart` 都同意（MP、法术锁等），就直接 `StartAction`，护盾和弹反同时生效；`Actor.CheckStartAction` 后置随后拦住缓冲的那次 Y，避免放两次。
+- 法术关键词和法术资源名或绑定的动作名比较（`Matches`），第一个已获得的生效；已获得 = 当前装备的 + 背包里的 `SpellItemData`，每 60 帧扫描一次。
+- **TarotHint**：`InventorySpellMenuManager.RefreshSelectedItemDisplay` 后置。描述文字由本地化组件异步填入，所以记下目标 `TMP_Text`（有副描述用副描述），每帧（`Plugin` 的 `Update`）检查末尾不是提示时重新接上。Y 和方向用 `<input="...">` 标签交给页面的 `InputTagTextPreprocessor` 转成图标，跟随按键配置；LT、RB、R3 是直接读手柄的，用 Y 图标的前缀（如 `xbox_`）拼出 `leftTrigger` / `rightShoulder` / `rightStickPress` 的精灵名，在精灵资源里找得到才用。需要按住的法术写"按住"。
+- 配置：`07 Tarot` 的 `Shortcuts` 和各 `*Spell(s)`。
+
+## DiveInvulnerable
+
+`src/Features/DiveInvulnerable.cs`。时空飞冲（`RiseAndFall`）全程无敌。
+
+- 补丁：`HeroHitStrategy.GetHitResult`、`DefaultHitStrategy.GetHitResult` 后置，和 Evasion 一样把 `Success` 改成 `Ignore`。
+- 判断：主角任何一个名字含 `RiseAndFall` 的动作在运行（起跳、停顿、下落、落地，以及穿过房间时接上的 `MC_EndRoomTransition_ChainRiseAndFall`）。
+- 陷阱、即死区域、坠落伤害不受影响。
+- 配置：`DiveInvulnerable`。在"法术优化"子页里改。
+
+## QuickEquip
+
+`src/Features/QuickEquip.cs`。十字键快捷换装。
+
+- 左/右（`QuickEquipWeapons`）：按资源名家族分组，每类只保留最高 `Tier`，顺序同暂停菜单。
+- 上/下（`QuickEquipSpells`）：未设快速施法的法术，顺序同塔罗页。
+- 攻击动作进行中不立刻换装：等该 `WeaponActionData` 结束，或当前帧已到 `chainableFrame`（可取消/连段的间隙）再执行；连按仍按队列轮换。
+- 任一开启时，左摇杆没动则清掉十字键对 `moveInputValue` 的贡献。
+- 配置与快速施法同在「快速操作」页。
+
+## CrossWallBounce
+
+`src/Features/CrossWallBounce.cs`。圣十字架（`BoomerangCross`）撞墙不消失。
+
+- 补丁：`BoomerangCrossIncreaseHitCount.OnStart`、`BoomerangCrossStateComponent.IncrementCount` 前置，开启时不累计撞墙次数；`Actor.StartAction` 前置，若动作名含 `BoomerangCrossProjectile_Projectile_Destroy` 且实体有 `BoomerangCrossStateComponent`，改成 `…BounceWall`。
+- 回到身边的回收逻辑不变。
+- 配置：`CrossWallBounce`。在"法术优化"子页里改。
+
+## LevelUpRefill
+
+`src/Features/LevelUpRefill.cs`。升级时 HP、MP 回满。
+
+- 补丁：`ExperienceComponent.IncrementCurrentExperience` 前置记下等级、后置比较；主角（`isMcEntity`）等级上升时调用 `Damageable.SetCurrentHealth`（`maxHealth`）和 `ManaCaster.SetCurrentMana`（`GetMaxMana`）。
+- 读档设置等级不经过这里，所以不算升级。
+- 配置：`LevelUpRefill`。
+
+## StatueLevelUp
+
+`src/Features/StatueLevelUp.cs`。经验雕像保证升级。
+
+- 补丁：`ExperienceLootData.Drop` 后置，掉落者名字含 `DestructibleSourceExperience` 时记下当时的等级；`IncrementCurrentExperience` 后置记录最后一次获得经验的帧。
+- 经验球是飞向主角后才入账的，所以等 90 帧不再有经验入账（最多 900 帧）后再判断：等级没有上升就用 `IncrementCurrentExperience` 补上 `GetExperienceMax() - GetExperienceCurrent()`。
+- 日志里的 `experience dropped by ...` 会列出每个掉落经验的对象名，雕像改名时用它确认 `StatueName`。
+- 配置：`StatueLevelUp`。

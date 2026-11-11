@@ -34,7 +34,13 @@ object[] {
 
 每个 item：`entry`（ConfigEntryBase）、`type`（`"bool"` / `"float"`）、`labelZh/En`、`hintZh/En`，滑条另有 `min`、`max`、`step`、`format`。
 
-Minimap 的文字如果有游戏字体渲染不了的字，整行会被跳过。
+Minimap 的文字如果有游戏字体渲染不了的字，整行会被跳过。每个 provider 最多 32 项，超出时整页被丢弃。
+
+Minimap 第三方 mod 不能做子标签，因此用三个 `ProviderV2`（主程序集 + `ExtraProviders` 生成的两个内存程序集）对应 MODS 列表里三行：奥创模式、快速操作、法术优化。每页最多 32 项。
+
+Belmont UI 对应三次 `Register`。
+
+快速操作页（`src/Menu/TarotPage.cs`，id `…actions`）：左右键换装、上下键换法术、快速施法开关，以及每张牌的组合键 `enum` 行；视图配置在 `BepInEx/cache/ultra_mode.tarot-page.cfg`。
 
 ## 独立 Belmont UI（反射）
 
@@ -43,7 +49,7 @@ Minimap 的文字如果有游戏字体渲染不了的字，整行会被跳过。
 | 类型 | 成员 |
 | --- | --- |
 | `BelmontUi.Settings` | `static SettingsMenu Register(string guid, LocalizedText title, Action<SettingsMenu> build, LocalizedText summary)`（`build` 传 null，在返回的 menu 上逐行添加） |
-| `BelmontUi.SettingsMenu` | `Toggle(ConfigEntryBase, LocalizedText, LocalizedText)`、`Slider(ConfigEntryBase, LocalizedText, float, float, float, string, LocalizedText)`、`ResetButton(string, string, string)` |
+| `BelmontUi.SettingsMenu` | `Toggle(ConfigEntryBase, LocalizedText, LocalizedText)`、`Slider(ConfigEntryBase, LocalizedText, float, float, float, string, LocalizedText)`、`Header(LocalizedText)`、`Choice(...)`、`Button(...)` |
 | `BelmontUi.LocalizedText` | 构造函数 `(string en)`、索引器 `[string lang]` |
 
 找不到任何一个都会抛异常，被 `Register` 捕获后只记日志。上游改了这些签名时，这里和内嵌版的 `SettingsPage.Embedded` 要一起改。

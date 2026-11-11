@@ -55,6 +55,7 @@ internal static class Inspector
                 sb.AppendLine($"{f.name}\tlifetime={(f.hasLifetime ? f.lifetimeInFrame.ToString() : "loop")}");
         });
         Write("charms.txt", DumpCharms);
+        Write("spells.txt", DumpSpells);
         Plugin.Logger.LogMessage($"Ultra Mode dump written to {Dir}");
     }
 
@@ -133,6 +134,37 @@ internal static class Inspector
                 for (var i = 0; i < removes.Count; i++) Line(sb, "  removeOnUnequip", () => removes[i]?.name ?? "null");
             sb.AppendLine();
         }
+    }
+
+    private static void DumpSpells(StringBuilder sb)
+    {
+        var mc = Player.Get();
+        var inv = mc != null ? Player.Inventory(mc) : null;
+        var owned = new HashSet<IntPtr>();
+        if (inv != null)
+        {
+            var items = inv.GetAllItemsInInventory();
+            for (var i = 0; i < items.Count; i++) if (items[i] != null) owned.Add(items[i].Pointer);
+        }
+        var equipped = Safe(() => inv?.GetEquippedSpell());
+        foreach (var spell in FindAll<SpellItemData>().OrderBy(s => s.name))
+        {
+            sb.AppendLine($"==== {spell.name}  id={spell.itemID} owned={owned.Contains(spell.Pointer)} equipped={equipped != null && equipped.Pointer == spell.Pointer}");
+            DumpValue(sb, spell, 1, 3, new HashSet<IntPtr>(), true);
+            sb.AppendLine();
+        }
+        sb.AppendLine("#### UseItem triggers");
+        foreach (var t in FindAll<UseItem>().OrderBy(t => t.name))
+            Line(sb, t.name, () => $"itemType={t.itemType} noItem={t.noItemEquippedAction?.name ?? "-"}");
+        sb.AppendLine("\n#### Purification actions and triggers");
+        foreach (var o in FindAll<ScriptableObject>().Where(o => o.name.Contains("Purification", StringComparison.OrdinalIgnoreCase)).OrderBy(o => o.name))
+        {
+            sb.AppendLine($"==== {o.GetIl2CppType().Name} {o.name}");
+            DumpValue(sb, o, 1, 3, new HashSet<IntPtr>(), true);
+        }
+        var input = mc != null ? Player.Comp<PlayerInput>(mc) : null;
+        sb.AppendLine("\n#### Player input");
+        if (input != null) DumpValue(sb, input.data, 1, 4, new HashSet<IntPtr>(), true);
     }
 
     private static T? Safe<T>(Func<T?> get) where T : class

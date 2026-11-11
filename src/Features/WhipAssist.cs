@@ -10,7 +10,8 @@ namespace UltraMode.Features;
 /// Anchor highlights come from DistanceReactionSystem, which only measures distance. Each highlighted anchor is probed
 /// with the game's own target search (FindEntityTarget) aimed straight at it, so walls, range and target rules all
 /// match the real hook. The result drives three things: unreachable anchors lose their highlight, a lone reachable
-/// anchor is hooked whatever the aim, and a press with nothing to hook does not start the whip at all.
+/// anchor is hooked whatever the aim, and optionally (SkipEmpty, off by default) a press with nothing to hook does
+/// not start the whip.
 /// </summary>
 [Feature("WhipAssist")]
 [HarmonyPatch]
@@ -117,18 +118,20 @@ internal static class WhipAssist
     }
 
     /// <summary>Highlighted anchors the hook can actually reach, refreshed once per frame and frozen while a whip runs.</summary>
-    private static void Evaluate(Entity e)
+    /// <summary>A whip about to start passes its own detection, whose range and origin can differ in the air or off a wall.</summary>
+    private static void Evaluate(Entity e, WhipHookDetect? starting = null)
     {
-        if (evaluatedFrame == Time.frameCount || whipRunning) return;
+        if (whipRunning || (starting == null && evaluatedFrame == Time.frameCount)) return;
         evaluatedFrame = Time.frameCount;
         reachable.Clear();
         var state = Player.Comp<WhipHookState>(e);
-        if (probeDetect == null || state == null) return;
+        var detect = starting ?? probeDetect;
+        if (detect == null || state == null) return;
         foreach (var a in anchors)
         {
             if (a.Distance == null || a.Distance.WasCollected || !(a.Wanted || a.Distance.activated) || !a.Entity.gameObject.activeInHierarchy) continue;
-            var origin = probeDetect.GetWhipOriginPoint(e);
-            if (!Probe(probeDetect, e, state, (a.Point.position - origin).normalized, out var target) || target == null) continue;
+            var origin = detect.GetWhipOriginPoint(e);
+            if (!Probe(detect, e, state, (a.Point.position - origin).normalized, out var target) || target == null) continue;
             if (target.Pointer == a.Entity.Pointer) reachable.Add(a);
             else if (mismatchReported.Add(a.Entity.Pointer))
                 Log.Debug($"WhipAssist: aiming at {a.Entity.name} found {target.name} instead");
@@ -247,7 +250,7 @@ internal static class WhipAssist
             var state = Player.Comp<WhipHookState>(e);
             if (state == null) return true;
             var hasNatural = Probe(__instance, e, state, null, out var natural) && natural != null;
-            Evaluate(e);
+            Evaluate(e, __instance);
             if (hasNatural && anchors.Any(a => a.Entity.Pointer == natural!.Pointer && !reachable.Contains(a)))
             {
                 Log.Debug($"WhipAssist: {natural!.name} found only at the edge of reach, ignored");
@@ -262,7 +265,7 @@ internal static class WhipAssist
             }
             if (!Settings.WhipSkipEmpty.Value) return true;
             __result = false;
-            return Decide("nothing to hook, blocked", false);
+            return Decide($"nothing to hook, blocked (during {string.Join(", ", ActionTracker.Active.Values.Select(d => d.name))})", false);
         }
         catch (Exception ex) { Fix.Fail(ex); return true; }
     }

@@ -43,6 +43,23 @@ internal static class Settings
     internal static ConfigEntry<bool> WhipAutoAim = null!;
     internal static ConfigEntry<bool> WhipHighlightReachable = null!;
 
+    internal static ConfigEntry<bool> LevelUpRefill = null!;
+    internal static ConfigEntry<bool> StatueLevelUp = null!;
+
+    internal static ConfigEntry<bool> TarotShortcuts = null!;
+    internal static ConfigEntry<string> TarotUpSpell = null!;
+    internal static ConfigEntry<string> TarotDownSpell = null!;
+    internal static ConfigEntry<string> TarotLTSpell = null!;
+    internal static ConfigEntry<string> TarotR3Spells = null!;
+    internal static ConfigEntry<string> TarotRBSpell = null!;
+    internal static ConfigEntry<string> TarotRBUpSpell = null!;
+    internal static ConfigEntry<string> TarotRBDownSpell = null!;
+    internal static ConfigEntry<string> TarotRBR3Spells = null!;
+    internal static ConfigEntry<bool> DiveInvulnerable = null!;
+    internal static ConfigEntry<bool> CrossWallBounce = null!;
+    internal static ConfigEntry<bool> QuickEquipWeapons = null!;
+    internal static ConfigEntry<bool> QuickEquipSpells = null!;
+
     internal static ConfigEntry<bool> PassiveCharms = null!;
     internal static ConfigEntry<bool> PassiveDrawbackCharms = null!;
     internal static ConfigEntry<string> DrawbackCharms = null!;
@@ -95,10 +112,31 @@ internal static class Settings
         ParryActionName = cfg.Bind("03 Parry", "ParryActionName", "MC_VaniaLight_Parry", "主角弹反动作的名字。攻击时会复用它的弹反窗口、受击策略和判定范围。");
 
         RepairMirrors = cfg.Bind("04 World", "RepairMirrors", true, "隐士任务后变成破碎状态的普通传送镜子恢复可用，快速传送不再被锁定。");
-
-        WhipSkipEmpty = cfg.Bind("06 Whip", "SkipEmpty", true, "附近没有可以钩的东西时，按钩锁键不出钩锁，也不打断当前动作。");
+        WhipSkipEmpty = cfg.Bind("06 Whip", "SkipEmpty", false, "附近没有可以钩的东西时，按钩锁键不出钩锁，也不打断当前动作。默认关闭，避免被当成钩锁失灵；需要时再打开。");
         WhipAutoAim = cfg.Bind("06 Whip", "AutoAim", true, "只有一个可钩物体高亮时，无论朝向哪边，按钩锁都自动钩中它。");
         WhipHighlightReachable = cfg.Bind("06 Whip", "HighlightReachable", true, "可钩物体只在真正钩得到时才高亮（被墙挡住、超出范围时不高亮）。");
+
+        LevelUpRefill = cfg.Bind("08 Recovery", "LevelUpRefill", true, "获得经验升级时，HP 和 MP 回满。读档不算升级。");
+        StatueLevelUp = cfg.Bind("08 Recovery", "StatueLevelUp", true, "击碎经验雕像后，掉落的经验不够升一级时，补足这一级剩下的经验，保证升级。");
+
+        TarotShortcuts = cfg.Bind("07 Tarot", "Shortcuts", true,
+            "快速施法：上+Y、下+Y、LT+Y、R3，以及按住 RB 的 RB+Y、RB+上/下+Y、RB+R3，直接释放指定的塔罗牌法术，不用切换装备，消耗按那张牌自己的计算。没获得的牌按原版处理。");
+        TarotUpSpell = cfg.Bind("07 Tarot", "UpSpell", "RiseAndFall",
+            "上+Y 释放的法术：关键词（逗号分隔），和法术资源名或它的动作名比较，第一个已获得的生效。F11 导出的 spells.txt 里有全部名字。");
+        TarotDownSpell = cfg.Bind("07 Tarot", "DownSpell", "FireSeismicWave", "下+Y 释放的法术，写法同 UpSpell。");
+        TarotLTSpell = cfg.Bind("07 Tarot", "LTSpell", "GlassArmor", "按住 LT 再按 Y 释放的法术，写法同 UpSpell。优先于上下方向。");
+        TarotR3Spells = cfg.Bind("07 Tarot", "R3Spells", "MassPurification,CursedFire",
+            "按下右摇杆（R3）释放的法术，写法同 UpSpell。升级后的牌写在前面，获得后就代替原来的。");
+        TarotRBSpell = cfg.Bind("07 Tarot", "RBSpell", "PetrifyingRay", "按住 RB 再按 Y 释放的法术，写法同 UpSpell。");
+        TarotRBUpSpell = cfg.Bind("07 Tarot", "RBUpSpell", "", "按住 RB 和上再按 Y 释放的法术，写法同 UpSpell。留空时按 RB+Y 处理。");
+        TarotRBDownSpell = cfg.Bind("07 Tarot", "RBDownSpell", "GiantFist", "按住 RB 和下再按 Y 释放的法术，写法同 UpSpell。留空时按 RB+Y 处理。");
+        TarotRBR3Spells = cfg.Bind("07 Tarot", "RBR3Spells", "LaserScytheSlash", "按住 RB 再按右摇杆（R3）释放的法术，写法同 R3Spells。");
+        DiveInvulnerable = cfg.Bind("07 Tarot", "DiveInvulnerable", true, "时空飞冲从起跳到落地全程无敌（陷阱、即死区域、坠落伤害仍然有效）。");
+        CrossWallBounce = cfg.Bind("07 Tarot", "CrossWallBounce", true, "圣十字架撞到墙时继续弹射，不消失；回到身边时仍按原版回收。");
+        QuickEquipWeapons = cfg.Bind("07 Tarot", "QuickEquipWeapons", true,
+            "十字键左右切换各类型已获得的最高级武器。开启后十字键不再用于移动（左摇杆仍可移动）。");
+        QuickEquipSpells = cfg.Bind("07 Tarot", "QuickEquipSpells", true,
+            "十字键上下切换未设置快速施法的法术。开启后十字键不再用于移动（左摇杆仍可移动）。");
 
         PassiveCharms = cfg.Bind("05 Charms", "PassiveCharms", true,
             "自动装备所有正面魔导器（不在 DrawbackCharms 里的）：获得即生效，不占装备槽。与 Charms Unlimited 同时使用时请关闭。");

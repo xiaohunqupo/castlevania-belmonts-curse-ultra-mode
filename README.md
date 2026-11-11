@@ -5,7 +5,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A BepInEx 6 IL2CPP plugin for **Castlevania: Belmont's Curse**. It keeps the original controls and makes them more responsive: faster movement and attacks, invulnerable dodges, a knockback recovery, parrying with normal attacks, whip aiming help, better camera and mirror handling, and relics that work passively once found.
+A BepInEx 6 IL2CPP plugin for **Castlevania: Belmont's Curse**. It keeps the original controls and makes them more responsive: faster movement and attacks, invulnerable dodges, a knockback recovery, parrying with normal attacks, whip aiming help, better camera and mirror handling, tarot spells cast straight from button combos, a full refill on level up, and relics that work passively once found.
 
 The goal is simple: remove the parts of the controls that feel frustrating, so the game is more fun to play.
 
@@ -19,8 +19,14 @@ The goal is simple: remove the parts of the controls that feel frustrating, so t
 | Camera | The camera keeps up with fast moves and launches; right-stick look range and speed are adjustable. |
 | Invulnerable evasion | No damage during the movement phase of the slide and backdash, shown by the speed-boost blink. The recovery afterwards can be hit as in vanilla. Traps, death zones and fall damage still apply. |
 | Knockback recovery | While knocked back (flying, rolling on landing, getting up), press Jump to stop at once and regain control. Knockback momentum is cleared and the shield relic's flash plays. |
-| Whip assist | Targets are first searched in the vanilla direction (enemies and anchors). If there is nothing that way and only one reachable highlighted anchor nearby, it is hooked automatically. With nothing to hook, the whip button does nothing and doesn't interrupt your action. Anchors are highlighted only when they can actually be reached. |
+| Whip assist | Targets are first searched in the vanilla direction (enemies and anchors). If there is nothing that way and only one reachable highlighted anchor nearby, it is hooked automatically. Anchors are highlighted only when they can actually be reached. Optionally block empty whips (off by default, so a miss is not mistaken for the whip being broken). |
 | Attack parry | Once parry is unlocked, normal attacks parry within the same frame window as the parry move. On success the attack keeps going and only the parry effects play; further enemy hits are ignored for the length of the vanilla parry-success action. |
+| Quick Cast | Cast any tarot spell you own with a button combo, without equipping it (see [Quick Cast](#quick-cast) below); it costs what that card costs. Spells that are held keep going while the combo is held. On the tarot equipment page, cards with a shortcut end their description with "Press/Hold *combo* to quick cast", using the game's own button icons. |
+| Invulnerable Chronomantic Dive | No damage from takeoff to landing of Chronomantic Dive. Traps, death zones and fall damage still apply. In the Spell Tweaks section of Ultra Mode. |
+| Holy Cross survives walls | Keeps bouncing off walls; catch-back is unchanged. In the Spell Tweaks section of Ultra Mode. |
+| Quick Actions | Left/Right swap weapons, Up/Down swap spells, Quick Cast — on the "Ultra Mode - Quick Actions" page. |
+| Refill on level up | Leveling up from experience restores all HP and MP. |
+| Statues always level up | When a broken experience statue drops less experience than the next level needs, the rest is added so you level up. |
 | Mirrors | Press Down at a mirror to enter at once, no holding. At mirrors you can travel from, the interact prompt reads "Save" (at a save point) or "Info" and adds "Down Teleport", with the game's own button icons. Teleport mirrors broken after The Hermit work again and fast travel is no longer locked (save-room mirrors you never used still can't be travelled to, as in vanilla). |
 | Passive relics | Relics with auto-equip on are active once found, without a slot (only relics you own; missing ones stay inactive). Relics without and with drawbacks have separate switches; by default only the ones without drawbacks are auto-equipped. Other relics are equipped by hand as in vanilla. |
 | Always-on Gloomstone | The Gloomstone's effect is always on, even before you find it: breakable hidden walls show when you are near (on by default, can be turned off). |
@@ -90,7 +96,9 @@ If a hotkey clashes with another mod, turn it off on the settings page ("Toggle 
 | `03 Parry` | Attack parry and the parry action it reuses |
 | `04 World` | Repair broken mirrors |
 | `05 Charms` | Auto-equip relics without / with drawbacks, the drawback relic list, always-on Gloomstone |
-| `06 Whip` | No empty whip, auto-aim, highlight reachable anchors only |
+| `06 Whip` | No empty whip (off by default), auto-aim, highlight reachable anchors only |
+| `07 Tarot` | Quick Cast, the spell of each combo, and spell tweaks (invulnerable Dive, Holy Cross survives walls, D-pad quick equip) |
+| `08 Recovery` | Refill on level up, statues always level up |
 | `99 Debug` | Debug logging, dump hotkey (off by default; config file only) |
 
 ### Relics
@@ -108,6 +116,28 @@ If a hotkey clashes with another mod, turn it off on the settings page ("Toggle 
 
 - Auto-equipped relics can still be put in a slot (display only, effects don't stack); taking them out doesn't remove the passive effect.
 - `ForceRevealSecret` (on by default) keeps the Gloomstone (`Charm_RevealSecret`) effect always on, even before you find it. It doesn't depend on the two auto-equip switches.
+
+### Quick Cast
+
+Default combos (gamepad):
+
+| Combo | Spell | Config entry | Default |
+| --- | --- | --- | --- |
+| Up + Y | Chronomantic Dive | `UpSpell` | `RiseAndFall` |
+| Down + Y | Infernal Pyre | `DownSpell` | `FireSeismicWave` |
+| Hold LT + Y | Stained-Glass Shield | `LTSpell` | `GlassArmor` |
+| R3 | Absolution; Cursed Flame until you have Absolution | `R3Spells` | `MassPurification,CursedFire` |
+| Hold RB + Y | Petrifying Gaze | `RBSpell` | `PetrifyingRay` |
+| Hold RB + Down + Y | Fist of Talos | `RBDownSpell` | `GiantFist` |
+| Hold RB + Up + Y | None set (acts as RB + Y) | `RBUpSpell` | empty |
+| Hold RB + R3 | Soul Harvest | `RBR3Spells` | `LaserScytheSlash` |
+
+- Only cards you own are cast; otherwise the combo behaves as in vanilla (the equipped card).
+- In game, change them in the Quick Cast section of the single "Ultra Mode" entry on the MODS tab: enable switch, cards on the left with a combo list on the right (card names in the game's language; internal names before a save is loaded). A combo casts one card: giving it to another card sets the previous one to None.
+- Entries hold keywords of the spell's internal name, comma-separated; the first owned one wins, so list an upgraded card first (Absolution replaces Cursed Flame once you have it). All internal names: `BloodSpikes`, `BoomerangCross`, `CursedFireBall`, `Detainment`, `FireSeismicWave`, `FreezingMist`, `GiantFist`, `GlassArmor`, `InvocationStone`, `LaserScytheSlash`, `LifeDrain`, `MassPurification`, `PetrifyingRay`, `PocketMirror`, `RiseAndFall`, `TargetingChargingWheels`.
+- LT parries in vanilla. With LT held, Y casts the shield together with the parry instead of waiting for it to end.
+- RB is the interact button in vanilla, so RB + Y next to something interactive may interact as well.
+- Held spells such as Absolution and Soul Harvest keep going while R3 is held when cast with R3; releasing it works like releasing Y in vanilla.
 
 ## Compatibility
 
@@ -161,10 +191,19 @@ src/
     MirrorRepair.cs          Repairs broken mirrors, unlocks fast travel
     MirrorPrompt.cs          "Save/Info" and "Down Teleport" prompt at mirrors (InputTagTextPreprocessor)
     PassiveCharms.cs         Passive relics, always-on Gloomstone
+    TarotShortcuts.cs        Quick Cast (UseItem.GetActionData swaps the spell action, costs follow the swapped card)
+    TarotHint.cs             Quick-cast line on the tarot equipment page
+    DiveInvulnerable.cs      Invulnerable Chronomantic Dive (HitStrategy.GetHitResult)
+    CrossWallBounce.cs       Holy Cross survives walls
+    QuickEquip.cs            D-pad quick equip
+    LevelUpRefill.cs         Refill on level up (ExperienceComponent.IncrementCurrentExperience)
+    StatueLevelUp.cs         Statues always level up (ExperienceLootData.Drop)
   Menu/
     SettingsRows.cs          Every row of the settings page (single definition shared by all menus)
     SettingsPage.cs          Picks Minimap, standalone Belmont UI or embedded Belmont UI for the page
-    MinimapProvider.cs       Belmont Minimap's ProviderV2 contract
+    MinimapProvider.cs       Belmont Minimap's ProviderV2 (one page, three section prefixes)
+    TarotPage.cs             Quick Cast section: a combo list per card
+    SpellPage.cs             Spell Tweaks section
     EmbeddedBelmontUi.cs     Starts the embedded Belmont UI (replaces upstream Plugin.cs)
 vendor/BelmontUI/            Belmont UI upstream source (MIT), generated by script, don't edit by hand
 tools/TypeDump/              Dumps types and members from the interop assemblies

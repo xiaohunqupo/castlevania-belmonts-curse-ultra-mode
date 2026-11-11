@@ -5,7 +5,7 @@
 
 [English](README.md) | 简体中文
 
-《恶魔城：贝尔蒙特诅咒》（Castlevania: Belmont's Curse）的 BepInEx 6 IL2CPP 插件。在保留原作操作体系的前提下，提升操作响应、强化闪避与受身、扩展弹反、辅助钩锁、改善镜头和镜子的操作，并可让魔导器获得后自动作为被动生效。
+《恶魔城：贝尔蒙特诅咒》（Castlevania: Belmont's Curse）的 BepInEx 6 IL2CPP 插件。在保留原作操作体系的前提下，提升操作响应、强化闪避与受身、扩展弹反、辅助钩锁、改善镜头和镜子的操作，用组合键直接释放塔罗牌法术，升级时回满状态，并可让魔导器获得后自动作为被动生效。
 
 做这个模式的目的很简单：去掉操作上让人憋屈的地方，让大家玩得更尽兴、更开心。
 
@@ -19,8 +19,14 @@
 | 镜头 | 镜头跟随人物更快（被弹射、快速移动时不再慢一步）；右摇杆观察的范围和速度可调 |
 | 闪避无敌 | 滑铲、后撤步的位移阶段不受伤害，并显示移速提升时的变色闪烁；之后恢复站姿的部分和原版一样会被打到（陷阱、即死区域、坠落伤害仍然有效） |
 | 受身 | 被击飞期间（空中飞出、落地翻滚、倒地爬起）按跳跃立即停住并恢复操作，同时清掉击飞惯性，播放护盾魔导器的闪光特效 |
-| 钩锁辅助 | 先按原版方向找目标（敌人和钩点都算）；这个方向上没有目标、附近只有一个钩得到的高亮钩点时，自动钩中它；什么都钩不到时按钩锁不出手、不打断动作；钩点只在真正钩得到时才高亮 |
+| 钩锁辅助 | 先按原版方向找目标（敌人和钩点都算）；这个方向上没有目标、附近只有一个钩得到的高亮钩点时，自动钩中它；钩点只在真正钩得到时才高亮。可选「无目标时不出钩锁」（默认关，避免被当成失灵） |
 | 攻击弹反 | 解锁弹反后，普通攻击也会按弹反动作相同的帧窗口进行弹反；成功时保持攻击动作，只播放弹反特效，之后在原版弹反成功动作的时长内，敌人后续的命中无效 |
+| 快速施法 | 不用切换装备，按组合键直接释放已获得的塔罗牌法术（见下文[快速施法](#快速施法)），消耗按那张牌自己的计算；需要按住的法术按住组合键即可。装备塔罗牌页面上，有快捷键的牌在描述末尾显示"按下/按住 组合键 快速施法"，按键用游戏自己的图标 |
+| 时空飞冲无敌 | 时空飞冲从起跳到落地全程无敌（陷阱、即死区域、坠落伤害仍然有效）；设置在「奥创模式」的法术优化段 |
+| 圣十字架撞墙不消失 | 撞墙继续弹射，回到身边时仍按原版回收；设置在「奥创模式」的法术优化段 |
+| 快速操作 | 左右键换装、上下键换法术、快速施法；单独一页「奥创模式 - 快速操作」 |
+| 升级回满 | 获得经验升级时，HP 和 MP 回满 |
+| 经验雕像保证升级 | 击碎经验雕像后，掉落的经验不够升一级时自动补足，保证升级 |
 | 镜子 | 镜子前按下立即进入，不需要按住；能传送的镜子前，交互提示改为「保存」（存档点）或「信息」，后面加上「下 传送」（用游戏自己的按键图标）；隐士任务后变成破碎状态的普通传送镜子恢复可用，快速传送不再被锁定（没用过的存档室镜子仍按原版不能传送） |
 | 被动魔导器 | 开启了自动装备的魔导器获得即生效，不需要装进装备槽（只自动装备已经获得的，没获得的不会生效）；正面魔导器和带负面效果的魔导器分开开关，默认只自动装备正面的。没有自动装备的魔导器仍按原版手动装备 |
 | 洞幽石常开 | 洞幽石的效果始终生效，没获得也一样：靠近时显示可破坏的隐藏墙壁（默认开，可在设置里关闭） |
@@ -88,7 +94,9 @@
 | `03 Parry` | 攻击弹反、复用的弹反动作 |
 | `04 World` | 修复破碎镜子 |
 | `05 Charms` | 自动装备正面 / 负面魔导器、负面魔导器名单、洞幽石常开 |
-| `06 Whip` | 无目标时不出钩锁、自动瞄准、只高亮钩得到的目标 |
+| `06 Whip` | 无目标时不出钩锁（默认关）、自动瞄准、只高亮钩得到的目标 |
+| `07 Tarot` | 快速施法、各组合键对应的法术、法术优化（时空飞冲无敌、圣十字架撞墙不消失、十字键快捷换装） |
+| `08 Recovery` | 升级回满、经验雕像保证升级 |
 | `99 Debug` | 调试日志、导出快捷键（默认关闭，只能在配置文件里改） |
 
 ### 魔导器说明
@@ -106,6 +114,28 @@
 
 - 自动装备的魔导器仍然可以装进装备槽（只是显示用，不会叠加效果）；卸下也不会撤掉被动效果。
 - `ForceRevealSecret`（默认开）让洞幽石 `Charm_RevealSecret` 的效果始终生效，没获得也一样：靠近时显示可破坏的隐藏墙壁。它不受上面两个自动装备开关影响。
+
+### 快速施法
+
+默认的组合键（手柄）：
+
+| 组合键 | 法术 | 配置项 | 默认值 |
+| --- | --- | --- | --- |
+| 上 + Y | 时空飞冲 | `UpSpell` | `RiseAndFall` |
+| 下 + Y | 地狱火葬 | `DownSpell` | `FireSeismicWave` |
+| 按住 LT + Y | 彩绘玻璃护盾 | `LTSpell` | `GlassArmor` |
+| R3 | 赦免；还没有赦免时为诅咒之火 | `R3Spells` | `MassPurification,CursedFire` |
+| 按住 RB + Y | 石化凝视 | `RBSpell` | `PetrifyingRay` |
+| 按住 RB + 下 + Y | 塔罗斯之拳 | `RBDownSpell` | `GiantFist` |
+| 按住 RB + 上 + Y | 未指定（按 RB + Y 处理） | `RBUpSpell` | 空 |
+| 按住 RB + R3 | 灵魂收割 | `RBR3Spells` | `LaserScytheSlash` |
+
+- 只释放已经获得的牌；没获得时按原版处理（释放当前装备的牌）。
+- 游戏内在 MODS 的「奥创模式」里「快速施法」一段修改：启用开关，左边塔罗牌、右边选组合键（牌名用游戏当前语言；进存档前显示内部名）。一个组合键只对应一张牌，给另一张牌选同一个时，原来那张变成「无」。
+- 配置项填的是法术的内部名关键词，逗号分隔，第一个已获得的生效，所以把升级后的牌写在前面（例如赦免获得后代替诅咒之火）。全部内部名：`BloodSpikes`、`BoomerangCross`、`CursedFireBall`、`Detainment`、`FireSeismicWave`、`FreezingMist`、`GiantFist`、`GlassArmor`、`InvocationStone`、`LaserScytheSlash`、`LifeDrain`、`MassPurification`、`PetrifyingRay`、`PocketMirror`、`RiseAndFall`、`TargetingChargingWheels`。
+- LT 原版是弹反，按住 LT 再按 Y 时，护盾和弹反同时生效，不用等弹反结束。
+- RB 原版是交互键，站在可交互的东西旁边按 RB + Y 可能会同时触发交互。
+- 赦免、灵魂收割这类需要按住的法术，用 R3 释放时按住 R3 即可，松开的效果和原版松开 Y 一样。
 
 ## 兼容性
 
@@ -159,10 +189,19 @@ src/
     MirrorRepair.cs          修复破碎镜子、解除快速传送锁定
     MirrorPrompt.cs          镜子前的「保存/信息」「下 传送」提示（InputTagTextPreprocessor）
     PassiveCharms.cs         被动魔导器、洞幽石常开
+    TarotShortcuts.cs        快速施法（UseItem.GetActionData 替换法术动作，消耗按替换后的牌）
+    TarotHint.cs             装备塔罗牌页面的快速施法说明
+    DiveInvulnerable.cs      时空飞冲无敌（HitStrategy.GetHitResult）
+    CrossWallBounce.cs       圣十字架撞墙不消失
+    QuickEquip.cs            十字键快捷换装
+    LevelUpRefill.cs         升级回满（ExperienceComponent.IncrementCurrentExperience）
+    StatueLevelUp.cs         经验雕像保证升级（ExperienceLootData.Drop）
   Menu/
     SettingsRows.cs          设置页的全部行（唯一的定义处，各菜单共用）
     SettingsPage.cs          选择 Minimap、独立 Belmont UI 或内嵌 Belmont UI 来显示设置页
-    MinimapProvider.cs       Belmont Minimap 的 ProviderV2 约定
+    MinimapProvider.cs       Belmont Minimap 的 ProviderV2（单页三段前缀）
+    TarotPage.cs             快速施法段：每张牌一个组合键列表
+    SpellPage.cs             法术优化段
     EmbeddedBelmontUi.cs     内嵌 Belmont UI 的启动入口（代替上游的 Plugin.cs）
 vendor/BelmontUI/            Belmont UI 上游源码（MIT），由脚本生成，不要手改
 tools/TypeDump/              从 interop 程序集导出类型和成员
