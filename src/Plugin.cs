@@ -19,7 +19,7 @@ public sealed class Plugin : BasePlugin
 {
     public const string Id = "ultra_mode.belmontscurse";
     public const string Name = "Ultra Mode";
-    public const string Version = "0.1.1";
+    public const string Version = "0.2.0";
 
     internal static ManualLogSource Logger = null!;
     internal static Plugin Instance = null!;
